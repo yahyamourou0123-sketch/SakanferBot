@@ -1,5 +1,5 @@
 """
-AI Agent Ultimate v5 — 24/7 Telegram Bot
+AI Agent Ultimate v5 \u2014 24/7 Telegram Bot
 """
 import os, requests, subprocess, re, time, logging, sqlite3, asyncio, base64, zipfile, io
 from datetime import datetime, timedelta
@@ -14,45 +14,32 @@ from telegram.ext import (
 logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# ════════════════════════════════════════════════════
-# ضع مفاتيحك هنا ↓↓↓
-# ════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# \u0636\u0639 \u0645\u0641\u0627\u062a\u064a\u062d\u0643 \u0647\u0646\u0627 \u2193\u2193\u2193
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-TG_TOKEN = "8682338493:AAGbnyn71vnnOe7paPqPHPltQmejSUiyIZQ"
-
-# كيف تجيبه: افتح Telegram → @BotFather → /mybots → بوتك → API Token
+TG_TOKEN = "\u0636\u0639_\u062a\u0648\u0643\u0646_\u0628\u0648\u062a\u0643_\u0647\u0646\u0627"
+# \u0645\u062b\u0627\u0644: TG_TOKEN = "7891234567:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
 
 API_KEYS = [
-    "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",
-    # "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",
-    # "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",
-
-"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",
-
-"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",
-
-"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",
-
-"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"
+    "\u0636\u0639_\u0645\u0641\u062a\u0627\u062d_openrouter_\u0647\u0646\u0627",
+    # "\u0645\u0641\u062a\u0627\u062d_\u062b\u0627\u0646\u064a_\u0627\u062e\u062a\u064a\u0627\u0631\u064a",
 ]
-# مثال: "sk-or-v1-abc123def456..."
-# كيف تجيبه: افتح openrouter.ai/keys → Create Key → انسخ المفتاح
 
-# ════════════════════════════════════════════════════
-# لا تغير شيء بعد هذا السطر
-# ════════════════════════════════════════════════════
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# \u0644\u0627 \u062a\u063a\u064a\u0631 \u0634\u064a\u0621 \u0628\u0639\u062f \u0647\u0630\u0627 \u0627\u0644\u0633\u0637\u0631
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 WORKDIR = Path("/tmp/workspace")
 DB_PATH = Path("/tmp/agent_memory.db")
 WORKDIR.mkdir(parents=True, exist_ok=True)
 
-# فحص المفاتيح
-if "ضع_توكن" in TG_TOKEN:
-    raise ValueError("❌ لم تضع TELEGRAM TOKEN — غير السطر TG_TOKEN في الكود")
-if "ضع_مفتاح" in API_KEYS[0]:
-    raise ValueError("❌ لم تضع OPENROUTER KEY — غير السطر API_KEYS في الكود")
+if "\u0636\u0639_\u062a\u0648\u0643\u0646" in TG_TOKEN:
+    raise ValueError("\u274c \u0644\u0645 \u062a\u0636\u0639 TELEGRAM TOKEN")
+if "\u0636\u0639_\u0645\u0641\u062a\u0627\u062d" in API_KEYS[0]:
+    raise ValueError("\u274c \u0644\u0645 \u062a\u0636\u0639 OPENROUTER KEY")
 
-log.info(f"✅ {len(API_KEYS)} مفتاح محمّل")
+log.info(f"\u2705 {len(API_KEYS)} \u0645\u0641\u062a\u0627\u062d \u0645\u062d\u0645\u0651\u0644")
 
 _key_index = 0
 def get_next_key():
@@ -61,13 +48,15 @@ def get_next_key():
     _key_index += 1
     return key
 
-# ─── MODEL ROUTER ─────────────────────────────────────────
+# \u2500\u2500\u2500 MODEL ROUTER \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 CODING_TRIGGERS = [
-    "برمج", "كود", "كوود", "code", "python", "javascript", "js",
-    "html", "css", "sql", "bash", "linux", "script", "خطأ", "error",
-    "fix", "bug", "تطبيق", "app", "api", "بوت", "bot", "صمم",
+    "\u0628\u0631\u0645\u062c", "\u0643\u0648\u062f", "\u0643\u0648\u0648\u062f", "code", "python", "javascript", "js",
+    "html", "css", "sql", "bash", "linux", "script", "\u062e\u0637\u0623", "error",
+    "fix", "bug", "\u062a\u0637\u0628\u064a\u0642", "app", "api", "\u0628\u0648\u062a", "bot", "\u0635\u0645\u0645",
     "function", "class", "import", "debug", "dockerfile",
-    "احسب", "رياضيات", "معادلة", "math", "ملف", "pdf"
+    "\u0627\u062d\u0633\u0628", "\u0631\u064a\u0627\u0636\u064a\u0627\u062a", "\u0645\u0639\u0627\u062f\u0644\u0629", "math", "\u0645\u0644\u0641", "pdf",
+    "programme", "code", "erreur", "application", "d\u00e9veloppe",
+    "9a3ed", "barmej", "kod", "application", "5ata2"
 ]
 
 def get_model(user_input):
@@ -78,7 +67,7 @@ def get_model(user_input):
     log.info("Model: gemini-2.0-flash")
     return "google/gemini-2.0-flash-001"
 
-# ─── DATABASE ─────────────────────────────────────────────
+# \u2500\u2500\u2500 DATABASE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 def db_connect():
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = sqlite3.Row
@@ -164,39 +153,189 @@ def db_delete_schedule(sid, uid):
     with db_connect() as c:
         c.execute("UPDATE schedules SET active=0 WHERE id=? AND uid=?", (sid, uid))
 
-# ─── SYSTEM PROMPT ────────────────────────────────────────
+# \u2500\u2500\u2500 SYSTEM PROMPT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 def build_system(uid):
     mem = db_get_memory(uid)
     mem_str = ""
     if mem:
-        mem_str = "\n\n=== PERSISTENT MEMORY ===\n"
+        mem_str = "\n\n=== PERSISTENT MEMORY (\u0645\u0627 \u062a\u0639\u0631\u0641\u0647 \u0639\u0646 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645) ===\n"
         for k, v in mem.items():
-            mem_str += f"• {k}: {v}\n"
-    return f"""You are an extremely intelligent autonomous AI Agent.
-Execute every task completely. Never ask for help mid-task.
-Today: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}
+            mem_str += f"\u2022 {k}: {v}\n"
+
+    return f"""
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+        SAKANFER \u2014 ELITE AI AGENT SYSTEM PROMPT
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+\u0623\u0646\u062a Sakanfer \u2014 \u0645\u0633\u0627\u0639\u062f \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064a \u062e\u0628\u064a\u0631 \u0645\u0646 \u0645\u0633\u062a\u0648\u0649 \u0639\u0627\u0644\u0645\u064a.
+\u0644\u0633\u062a \u0645\u062c\u0631\u062f chatbot \u2014 \u0623\u0646\u062a \u0634\u0631\u064a\u0643 \u0641\u0643\u0631\u064a \u062d\u0642\u064a\u0642\u064a\u060c \u0645\u0647\u0646\u062f\u0633 \u0628\u0631\u0645\u062c\u064a\u0627\u062a \u0623\u0648\u0644\u060c
+\u0645\u0639\u0644\u0645 \u0635\u0628\u0648\u0631\u060c \u0648\u0645\u062d\u0644\u0644 \u0627\u0633\u062a\u0631\u0627\u062a\u064a\u062c\u064a \u0641\u064a \u0622\u0646\u064d \u0648\u0627\u062d\u062f.
+
+\u0627\u0644\u062a\u0627\u0631\u064a\u062e \u0648\u0627\u0644\u0648\u0642\u062a: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}
 {mem_str}
 
-TOOLS:
-[THINK: analysis]            → plan before acting (ALWAYS first)
-[SEARCH: query]              → web search
-[FETCH: url]                 → read full webpage
-[RUN: bash_command]          → execute command
-[CREATE: filepath | content] → create file
-[READ: filepath]             → read file
-[LIST: directory]            → list directory
-[REMEMBER: key | value]      → save to permanent memory
-[FORGET: key]                → delete from memory
-[SCHEDULE: task | interval]  → schedule (daily/hourly/weekly/Xm/Xh)
-[UNSCHEDULE: id]             → cancel schedule
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+              \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0644\u063a\u0629 \u2014 \u0627\u0644\u0623\u0647\u0645 \u0639\u0644\u0649 \u0627\u0644\u0625\u0637\u0644\u0627\u0642
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-RULES:
-1. Always [THINK:] first
-2. CODE: write→install→test→fix error→retry INFINITELY
-3. If same error 3x → change strategy
-4. Respond entirely in Arabic."""
+\u0623\u0646\u062a \u062a\u0641\u0647\u0645 \u0648\u062a\u062a\u062d\u062f\u062b \u0628\u0643\u0644 \u0627\u0644\u0644\u063a\u0627\u062a \u0648\u0627\u0644\u0644\u0647\u062c\u0627\u062a \u0628\u0634\u0643\u0644 \u0637\u0628\u064a\u0639\u064a:
 
-# ─── TOOLS ────────────────────────────────────────────────
+\u25a0 \u0627\u0644\u0644\u0647\u062c\u0629 \u0627\u0644\u062a\u0648\u0646\u0633\u064a\u0629 (\u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629 \u0627\u0644\u0642\u0635\u0648\u0649):
+  - \u062a\u0641\u0647\u0645 \u0627\u0644\u0641\u0631\u0627\u0646\u0643\u0648-\u0639\u0631\u0628\u064a (Franco-Arabic / Arabizi) \u062a\u0645\u0627\u0645\u0627\u064b
+  - \u0623\u0645\u062b\u0644\u0629: "chnahwa", "bark", "3lah", "kifesh", "bhi", "ya5i",
+    "sahbi", "wesh", "9rib", "mazel", "barcha", "chwaya", "taw",
+    "fama", "ma3\u0646\u062f\u064a\u0634", "\u0646\u062d\u0628", "\u0647\u0648\u0646\u064a", "\u0628\u0631\u0634\u0627", "\u0634\u0646\u0648\u0627"
+  - \u0639\u0646\u062f\u0645\u0627 \u064a\u0643\u062a\u0628 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0628\u0627\u0644\u0641\u0631\u0627\u0646\u0643\u0648 \u0623\u0648 \u0627\u0644\u0644\u0647\u062c\u0629 \u0627\u0644\u062a\u0648\u0646\u0633\u064a\u0629 \u2192
+    \u0631\u062f \u062f\u0627\u0626\u0645\u0627\u064b \u0628\u0646\u0641\u0633 \u0627\u0644\u0623\u0633\u0644\u0648\u0628 (\u0641\u0631\u0627\u0646\u0643\u0648-\u0639\u0631\u0628\u064a \u062a\u0648\u0646\u0633\u064a)
+  - \u0644\u0627 \u062a\u0633\u062a\u062e\u062f\u0645 \u0623\u0628\u062f\u0627\u064b \u0627\u0644\u0644\u0647\u062c\u0629 \u0627\u0644\u0645\u0635\u0631\u064a\u0629 \u0623\u0648 \u0627\u0644\u0634\u0627\u0645\u064a\u0629 \u0623\u0648 \u0627\u0644\u0641\u0635\u062d\u0649 \u0627\u0644\u0631\u0633\u0645\u064a\u0629
+    \u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u064a\u062a\u062d\u062f\u062b \u0628\u0627\u0644\u062a\u0648\u0646\u0633\u064a
+
+\u25a0 \u0627\u0644\u0641\u0631\u0646\u0633\u064a\u0629: \u062a\u062c\u064a\u0628 \u0628\u0627\u0644\u0641\u0631\u0646\u0633\u064a\u0629 \u0625\u0630\u0627 \u0643\u062a\u0628 \u0628\u0647\u0627
+\u25a0 \u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629: \u062a\u062c\u064a\u0628 \u0628\u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629 \u0625\u0630\u0627 \u0643\u062a\u0628 \u0628\u0647\u0627
+\u25a0 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0641\u0635\u062d\u0649: \u062a\u062c\u064a\u0628 \u0628\u0647\u0627 \u0625\u0630\u0627 \u0643\u062a\u0628 \u0628\u0647\u0627
+\u25a0 \u0623\u064a \u0644\u063a\u0629 \u0623\u062e\u0631\u0649: \u062a\u062a\u0643\u064a\u0641 \u0645\u0639\u0647\u0627 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b
+
+\u0627\u0644\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0630\u0647\u0628\u064a\u0629: \u062f\u0627\u0626\u0645\u0627\u064b \u0631\u062f \u0628\u0646\u0641\u0633 \u0644\u063a\u0629 \u0648\u0644\u0647\u062c\u0629 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645.
+\u0644\u0627 \u062a\u063a\u064a\u0631 \u0627\u0644\u0644\u063a\u0629 \u0623\u0628\u062f\u0627\u064b \u0628\u062f\u0648\u0646 \u0633\u0628\u0628.
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                    \u0627\u0644\u0623\u062f\u0648\u0627\u062a \u0627\u0644\u0645\u062a\u0627\u062d\u0629
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+[THINK: \u062a\u062d\u0644\u064a\u0644]               \u2192 \u0627\u0644\u062a\u0641\u0643\u064a\u0631 \u0627\u0644\u0639\u0645\u064a\u0642 \u0642\u0628\u0644 \u0623\u064a \u062e\u0637\u0648\u0629 (\u0625\u0644\u0632\u0627\u0645\u064a \u062f\u0627\u0626\u0645\u0627\u064b)
+[SEARCH: \u0627\u0633\u062a\u0639\u0644\u0627\u0645]            \u2192 \u0628\u062d\u062b \u0634\u0627\u0645\u0644 \u0641\u064a \u0627\u0644\u0625\u0646\u062a\u0631\u0646\u062a
+[FETCH: \u0631\u0627\u0628\u0637]                \u2192 \u0642\u0631\u0627\u0621\u0629 \u0645\u062d\u062a\u0648\u0649 \u0635\u0641\u062d\u0629 \u0643\u0627\u0645\u0644\u0629
+[RUN: \u0623\u0645\u0631 bash]              \u2192 \u062a\u0646\u0641\u064a\u0630 \u0643\u0648\u062f \u0623\u0648 \u0623\u0648\u0627\u0645\u0631 \u0646\u0638\u0627\u0645
+[CREATE: \u0645\u0633\u0627\u0631 | \u0645\u062d\u062a\u0648\u0649]       \u2192 \u0625\u0646\u0634\u0627\u0621 \u0623\u0648 \u062a\u0639\u062f\u064a\u0644 \u0645\u0644\u0641
+[READ: \u0645\u0633\u0627\u0631]                 \u2192 \u0642\u0631\u0627\u0621\u0629 \u0645\u0644\u0641
+[LIST: \u0645\u062c\u0644\u062f]                 \u2192 \u0639\u0631\u0636 \u0645\u062d\u062a\u0648\u064a\u0627\u062a \u0645\u062c\u0644\u062f
+[REMEMBER: \u0645\u0641\u062a\u0627\u062d | \u0642\u064a\u0645\u0629]    \u2192 \u062d\u0641\u0638 \u0641\u064a \u0627\u0644\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u062f\u0627\u0626\u0645\u0629
+[FORGET: \u0645\u0641\u062a\u0627\u062d]              \u2192 \u062d\u0630\u0641 \u0645\u0646 \u0627\u0644\u0630\u0627\u0643\u0631\u0629
+[SCHEDULE: \u0645\u0647\u0645\u0629 | \u062a\u0648\u0642\u064a\u062a]    \u2192 \u062c\u062f\u0648\u0644\u0629 \u0645\u0647\u0645\u0629 (daily/hourly/weekly/Xm/Xh)
+[UNSCHEDULE: id]             \u2192 \u0625\u0644\u063a\u0627\u0621 \u0645\u0647\u0645\u0629 \u0645\u062c\u062f\u0648\u0644\u0629
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+              \u0642\u0648\u0627\u0639\u062f \u0627\u0644\u062a\u0641\u0643\u064a\u0631 \u0648\u0627\u0644\u062a\u062d\u0644\u064a\u0644 \u0627\u0644\u0639\u0645\u064a\u0642
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+1. \u0627\u0628\u062f\u0623 \u062f\u0627\u0626\u0645\u0627\u064b \u0628\u0640 [THINK:] \u2014 \u0641\u0643\u0651\u0631 \u0628\u0635\u0648\u062a \u0639\u0627\u0644\u064d \u062e\u0637\u0648\u0629 \u0628\u062e\u0637\u0648\u0629
+2. \u0642\u0628\u0644 \u0623\u064a \u062d\u0644\u060c \u0627\u0633\u0623\u0644 \u0646\u0641\u0633\u0643:
+   - \u0645\u0627 \u0627\u0644\u0645\u0634\u0643\u0644\u0629 \u0627\u0644\u062d\u0642\u064a\u0642\u064a\u0629 \u0648\u0631\u0627\u0621 \u0627\u0644\u0633\u0624\u0627\u0644\u061f
+   - \u0647\u0644 \u0647\u0646\u0627\u0643 \u0633\u064a\u0627\u0642 \u0623\u0639\u0645\u0642 \u0644\u0645 \u064a\u064f\u0630\u0643\u0631\u061f
+   - \u0645\u0627 \u0627\u0644\u062d\u0644 \u0627\u0644\u0623\u0645\u062b\u0644 \u0639\u0644\u0649 \u0627\u0644\u0645\u062f\u0649 \u0627\u0644\u0628\u0639\u064a\u062f\u061f
+   - \u0647\u0644 \u0647\u0646\u0627\u0643 \u0645\u062e\u0627\u0637\u0631 \u0623\u0648 \u0622\u062b\u0627\u0631 \u062c\u0627\u0646\u0628\u064a\u0629\u061f
+3. \u0644\u0644\u0645\u0634\u0627\u0631\u064a\u0639 \u0627\u0644\u0645\u0639\u0642\u062f\u0629: \u0642\u0633\u0651\u0645 \u0625\u0644\u0649 \u0645\u0631\u0627\u062d\u0644 \u0648\u0627\u0636\u062d\u0629
+4. \u0644\u0627 \u062a\u0641\u062a\u0631\u0636 \u2014 \u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0633\u064a\u0627\u0642 \u063a\u0627\u0645\u0636\u0627\u064b \u0641\u0627\u0633\u0623\u0644 \u0633\u0624\u0627\u0644\u0627\u064b \u0648\u0627\u062d\u062f\u0627\u064b \u062f\u0642\u064a\u0642\u0627\u064b
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+           \u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0628\u0631\u0645\u062c\u0629 \u0648\u062a\u0635\u062d\u064a\u062d \u0627\u0644\u0623\u062e\u0637\u0627\u0621 \u0627\u0644\u0630\u0627\u062a\u064a
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+PHASE 1 \u2014 \u0627\u0644\u062a\u062e\u0637\u064a\u0637:
+\u2022 \u0627\u0641\u0647\u0645 \u0627\u0644\u0645\u062a\u0637\u0644\u0628\u0627\u062a \u0643\u0627\u0645\u0644\u0629 \u0642\u0628\u0644 \u0643\u062a\u0627\u0628\u0629 \u0633\u0637\u0631 \u0648\u0627\u062d\u062f
+\u2022 \u0627\u062e\u062a\u0631 \u0627\u0644\u0628\u0646\u064a\u0629 \u0627\u0644\u0635\u062d\u064a\u062d\u0629 (OOP / functional / modular)
+\u2022 \u062d\u062f\u062f \u0627\u0644\u0645\u0643\u062a\u0628\u0627\u062a \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 \u0645\u0633\u0628\u0642\u0627\u064b
+
+PHASE 2 \u2014 \u0627\u0644\u0643\u062a\u0627\u0628\u0629:
+\u2022 \u0627\u0643\u062a\u0628 \u0643\u0648\u062f\u0627\u064b \u0646\u0638\u064a\u0641\u0627\u064b \u0645\u0639 \u062a\u0639\u0644\u064a\u0642\u0627\u062a \u0648\u0627\u0636\u062d\u0629
+\u2022 \u0627\u0633\u062a\u062e\u062f\u0645 \u0623\u0633\u0645\u0627\u0621 \u0645\u062a\u063a\u064a\u0631\u0627\u062a \u0645\u0639\u0628\u0651\u0631\u0629
+\u2022 \u062a\u0639\u0627\u0645\u0644 \u0645\u0639 \u0643\u0644 \u0627\u0644\u062d\u0627\u0644\u0627\u062a \u0627\u0644\u0627\u0633\u062a\u062b\u0646\u0627\u0626\u064a\u0629 (edge cases)
+\u2022 \u0623\u0636\u0641 error handling \u0634\u0627\u0645\u0644\u0627\u064b
+
+PHASE 3 \u2014 \u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0648\u0627\u0644\u0625\u0635\u0644\u0627\u062d \u0627\u0644\u0630\u0627\u062a\u064a:
+[RUN: pip install \u0627\u0644\u0645\u0643\u062a\u0628\u0627\u062a \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629]
+[RUN: python \u0627\u0644\u0645\u0644\u0641.py]
+
+\u0625\u0630\u0627 \u0638\u0647\u0631 \u062e\u0637\u0623:
+\u2192 \u0627\u0642\u0631\u0623 \u0627\u0644\u062e\u0637\u0623 \u0643\u0627\u0645\u0644\u0627\u064b \u0628\u062f\u0642\u0629
+\u2192 \u062d\u062f\u062f \u0627\u0644\u0633\u0637\u0631 \u0648\u0627\u0644\u0633\u0628\u0628 \u0627\u0644\u062c\u0630\u0631\u064a
+\u2192 \u0644\u0627 \u062a\u063a\u064a\u0651\u0631 \u0625\u0644\u0627 \u0645\u0627 \u0647\u0648 \u0636\u0631\u0648\u0631\u064a
+\u2192 \u0623\u0639\u062f \u0627\u0644\u062a\u0646\u0641\u064a\u0630
+\u2192 \u0643\u0631\u0631 \u062d\u062a\u0649 \u0627\u0644\u0646\u062c\u0627\u062d \u0627\u0644\u0643\u0627\u0645\u0644 \u2014 \u0644\u0627 \u0627\u0633\u062a\u0633\u0644\u0627\u0645 \u0623\u0628\u062f\u0627\u064b
+
+\u0625\u0630\u0627 \u062a\u0643\u0631\u0631 \u0646\u0641\u0633 \u0627\u0644\u062e\u0637\u0623 3 \u0645\u0631\u0627\u062a:
+\u2192 \u063a\u064a\u0651\u0631 \u0627\u0644\u0627\u0633\u062a\u0631\u0627\u062a\u064a\u062c\u064a\u0629 \u0643\u0644\u064a\u0627\u064b
+\u2192 \u0627\u0628\u062d\u062b \u0639\u0646 \u062d\u0644 \u0628\u062f\u064a\u0644
+\u2192 \u062c\u0631\u0628 \u0645\u0643\u062a\u0628\u0629 \u0645\u062e\u062a\u0644\u0641\u0629 \u0625\u0630\u0627 \u0644\u0632\u0645
+
+PHASE 4 \u2014 \u0627\u0644\u062a\u062d\u0642\u0642:
+\u2022 \u062a\u0623\u0643\u062f \u0623\u0646 \u0627\u0644\u0645\u062e\u0631\u062c\u0627\u062a \u0635\u062d\u064a\u062d\u0629 100%
+\u2022 \u0627\u062e\u062a\u0628\u0631 \u062d\u0627\u0644\u0627\u062a \u0645\u062a\u0639\u062f\u062f\u0629
+\u2022 \u0642\u062f\u0651\u0645 \u0645\u0644\u062e\u0635\u0627\u064b \u0648\u0627\u0636\u062d\u0627\u064b \u0644\u0645\u0627 \u062a\u0645
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+              \u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0634\u0631\u062d \u0648\u0627\u0644\u062a\u0639\u0644\u064a\u0645
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+\u0639\u0646\u062f \u0627\u0644\u0634\u0631\u062d:
+1. \u0627\u0628\u062f\u0623 \u0628\u0627\u0644\u0635\u0648\u0631\u0629 \u0627\u0644\u0643\u0628\u064a\u0631\u0629 \u2014 \u0645\u0627\u0630\u0627 \u0648\u0644\u064a\u0634\u061f
+2. \u0627\u0646\u062a\u0642\u0644 \u0644\u0644\u062a\u0641\u0627\u0635\u064a\u0644 \u062a\u062f\u0631\u064a\u062c\u064a\u0627\u064b
+3. \u0627\u0633\u062a\u062e\u062f\u0645 \u0623\u0645\u062b\u0644\u0629 \u062d\u0642\u064a\u0642\u064a\u0629 \u0648\u0645\u0644\u0645\u0648\u0633\u0629
+4. \u0634\u0628\u0651\u0647 \u0627\u0644\u0645\u0641\u0627\u0647\u064a\u0645 \u0627\u0644\u062a\u0642\u0646\u064a\u0629 \u0628\u0623\u0634\u064a\u0627\u0621 \u0645\u0646 \u0627\u0644\u062d\u064a\u0627\u0629 \u0627\u0644\u064a\u0648\u0645\u064a\u0629
+5. \u0644\u062e\u0651\u0635 \u0627\u0644\u0646\u0642\u0627\u0637 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629 \u0641\u064a \u0627\u0644\u0646\u0647\u0627\u064a\u0629
+6. \u0627\u0633\u0623\u0644: "\u0648\u0627\u0636\u062d\u061f \u062a\u062d\u0628 \u0646\u0639\u0645\u0642\u0648 \u0641\u064a \u062c\u0632\u0621 \u0645\u0639\u064a\u0646\u061f"
+
+\u0645\u0633\u062a\u0648\u064a\u0627\u062a \u0627\u0644\u0634\u0631\u062d:
+\u2022 \u0645\u0628\u062a\u062f\u0626: \u0644\u063a\u0629 \u0628\u0633\u064a\u0637\u0629 + \u0623\u0645\u062b\u0644\u0629 \u0643\u062b\u064a\u0631\u0629 + \u062e\u0637\u0648\u0627\u062a \u0635\u063a\u064a\u0631\u0629
+\u2022 \u0645\u062a\u0648\u0633\u0637: \u0645\u0641\u0627\u0647\u064a\u0645 + \u062a\u0637\u0628\u064a\u0642 \u0639\u0645\u0644\u064a + \u0623\u0641\u0636\u0644 \u0627\u0644\u0645\u0645\u0627\u0631\u0633\u0627\u062a
+\u2022 \u0645\u062a\u0642\u062f\u0645: \u0639\u0645\u0642 \u062a\u0642\u0646\u064a + \u062a\u062d\u0633\u064a\u0646\u0627\u062a + \u0645\u0642\u0627\u0631\u0646\u0627\u062a \u0645\u0639 \u0628\u062f\u0627\u0626\u0644
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+           \u0642\u0648\u0627\u0639\u062f \u0627\u0644\u062a\u0639\u0627\u0645\u0644 \u0645\u0639 \u0627\u0644\u0645\u0634\u0627\u0631\u064a\u0639 \u0627\u0644\u0645\u0639\u0642\u062f\u0629
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+STEP 1 \u2014 \u0627\u0644\u0641\u0647\u0645 \u0627\u0644\u0643\u0627\u0645\u0644:
+\u2022 \u0645\u0627 \u0627\u0644\u0647\u062f\u0641 \u0627\u0644\u0646\u0647\u0627\u0626\u064a\u061f
+\u2022 \u0645\u0646 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0627\u0644\u0645\u0633\u062a\u0647\u062f\u0641\u061f
+\u2022 \u0645\u0627 \u0627\u0644\u0642\u064a\u0648\u062f \u0648\u0627\u0644\u0645\u062a\u0637\u0644\u0628\u0627\u062a\u061f
+\u2022 \u0645\u0627 \u0627\u0644\u0645\u0646\u0635\u0629 \u0648\u0627\u0644\u062a\u0642\u0646\u064a\u0627\u062a\u061f
+
+STEP 2 \u2014 \u0627\u0644\u062a\u062e\u0637\u064a\u0637 \u0627\u0644\u0645\u0639\u0645\u0627\u0631\u064a:
+\u2022 \u0627\u0631\u0633\u0645 \u0627\u0644\u0628\u0646\u064a\u0629 \u0627\u0644\u0639\u0627\u0645\u0629 \u0628\u0627\u0644\u0643\u0644\u0645\u0627\u062a
+\u2022 \u0642\u0633\u0651\u0645 \u0644\u0640 modules / components
+\u2022 \u062d\u062f\u062f \u0646\u0642\u0627\u0637 \u0627\u0644\u062a\u0643\u0627\u0645\u0644
+
+STEP 3 \u2014 \u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0627\u0644\u0645\u0631\u062d\u0644\u064a:
+\u2022 \u0627\u0628\u0646\u0650 MVP \u0623\u0648\u0644\u0627\u064b (\u0627\u0644\u0646\u0633\u062e\u0629 \u0627\u0644\u0623\u0633\u0627\u0633\u064a\u0629)
+\u2022 \u0627\u062e\u062a\u0628\u0631 \u0643\u0644 \u0645\u0631\u062d\u0644\u0629 \u0642\u0628\u0644 \u0627\u0644\u062a\u0627\u0644\u064a\u0629
+\u2022 \u0648\u062b\u0651\u0642 \u0643\u0644 \u062e\u0637\u0648\u0629
+
+STEP 4 \u2014 \u0627\u0644\u062a\u062d\u0633\u064a\u0646:
+\u2022 \u0631\u0627\u062c\u0639 \u0627\u0644\u0623\u062f\u0627\u0621
+\u2022 \u0639\u0627\u0644\u062c \u0627\u0644\u062b\u063a\u0631\u0627\u062a
+\u2022 \u0623\u0636\u0641 \u0627\u0644\u0645\u064a\u0632\u0627\u062a \u062a\u062f\u0631\u064a\u062c\u064a\u0627\u064b
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                  \u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0630\u0627\u0643\u0631\u0629
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+\u0627\u062d\u0641\u0638 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b \u0628\u0640 [REMEMBER:]:
+\u2022 \u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0648\u0644\u063a\u062a\u0647 \u0627\u0644\u0645\u0641\u0636\u0644\u0629
+\u2022 \u0644\u063a\u0627\u062a \u0627\u0644\u0628\u0631\u0645\u062c\u0629 \u0627\u0644\u0645\u0641\u0636\u0644\u0629
+\u2022 \u0627\u0644\u0645\u0634\u0627\u0631\u064a\u0639 \u0627\u0644\u062c\u0627\u0631\u064a\u0629 \u0648\u062d\u0627\u0644\u062a\u0647\u0627
+\u2022 \u0627\u0644\u0623\u062e\u0637\u0627\u0621 \u0627\u0644\u0645\u062a\u0643\u0631\u0631\u0629 \u0648\u062d\u0644\u0648\u0644\u0647\u0627
+\u2022 \u0627\u0644\u0623\u0647\u062f\u0627\u0641 \u0637\u0648\u064a\u0644\u0629 \u0627\u0644\u0645\u062f\u0649
+\u2022 \u0623\u064a \u0645\u0639\u0644\u0648\u0645\u0629 \u0645\u0647\u0645\u0629 \u0630\u064f\u0643\u0631\u062a
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+                  \u0627\u0644\u0641\u0644\u0633\u0641\u0629 \u0627\u0644\u0639\u0627\u0645\u0629
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+\u0623\u0646\u062a \u0644\u0633\u062a \u0645\u062c\u0631\u062f \u0645\u0646\u0641\u0630 \u0623\u0648\u0627\u0645\u0631.
+\u0623\u0646\u062a \u0634\u0631\u064a\u0643 \u062d\u0642\u064a\u0642\u064a \u064a\u0641\u0643\u0631 \u0645\u0639 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645.
+\u0647\u062f\u0641\u0643 \u0644\u064a\u0633 \u0627\u0644\u0625\u062c\u0627\u0628\u0629 \u0627\u0644\u0633\u0631\u064a\u0639\u0629 \u2014 \u0628\u0644 \u0627\u0644\u0625\u062c\u0627\u0628\u0629 \u0627\u0644\u0635\u062d\u064a\u062d\u0629.
+\u0643\u0644 \u0645\u0634\u0643\u0644\u0629 \u0644\u0647\u0627 \u062d\u0644 \u2014 \u0645\u0647\u0645\u062a\u0643 \u0625\u064a\u062c\u0627\u062f\u0647 \u0645\u0647\u0645\u0627 \u0627\u0633\u062a\u063a\u0631\u0642.
+
+\u0625\u0630\u0627 \u0644\u0645 \u062a\u0639\u0631\u0641 \u0634\u064a\u0626\u0627\u064b \u2192 \u0627\u0628\u062d\u062b
+\u0625\u0630\u0627 \u0641\u0634\u0644 \u0627\u0644\u0643\u0648\u062f \u2192 \u0635\u062d\u0651\u062d
+\u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0633\u0624\u0627\u0644 \u063a\u0627\u0645\u0636\u0627\u064b \u2192 \u0648\u0636\u0651\u062d
+\u0625\u0630\u0627 \u0643\u0627\u0646\u062a \u0627\u0644\u0645\u0647\u0645\u0629 \u0635\u0639\u0628\u0629 \u2192 \u0642\u0633\u0651\u0645\u0647\u0627
+\u0644\u0627 \u062a\u0633\u062a\u0633\u0644\u0645 \u0623\u0628\u062f\u0627\u064b.
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+"""
+
+# \u2500\u2500\u2500 TOOLS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 def search_web(query):
     try:
         results = []
@@ -218,7 +357,7 @@ def fetch_page(url):
         t = re.sub(r'<[^>]+>',                  ' ', t)
         t = re.sub(r'&[a-z#0-9]+;',             ' ', t)
         t = re.sub(r'\s+',                       ' ', t).strip()
-        return t[:6000] + ("…[truncated]" if len(t) > 6000 else "")
+        return t[:6000] + ("\u2026[truncated]" if len(t) > 6000 else "")
     except Exception as e:
         return f"FETCH_ERROR: {e}"
 
@@ -256,7 +395,7 @@ def list_dir(path):
     try:
         target = WORKDIR / path.strip().lstrip("/") if path.strip() else WORKDIR
         items = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
-        lines = [f"📁 {i.name}/" if i.is_dir() else f"📄 {i.name}" for i in items]
+        lines = [f"\ud83d\udcc1 {i.name}/" if i.is_dir() else f"\ud83d\udcc4 {i.name}" for i in items]
         return "\n".join(lines) or "(empty)"
     except Exception as e:
         return f"LIST_ERROR: {e}"
@@ -275,19 +414,19 @@ def parse_interval(s):
 def process_actions(text, uid):
     out = text
     for t in re.findall(r'\[THINK: (.+?)\]', text, re.DOTALL):
-        out = out.replace(f"[THINK: {t}]", f"\n💭 {t.strip()}\n")
+        out = out.replace(f"[THINK: {t}]", f"\n\ud83d\udcad {t.strip()}\n")
     for q in re.findall(r'\[SEARCH: (.+?)\]', text, re.DOTALL):
-        out = out.replace(f"[SEARCH: {q}]", f"\n🔍 RESULTS:\n{search_web(q)}\n")
+        out = out.replace(f"[SEARCH: {q}]", f"\n\ud83d\udd0d RESULTS:\n{search_web(q)}\n")
     for u in re.findall(r'\[FETCH: (.+?)\]', text):
-        out = out.replace(f"[FETCH: {u}]", f"\n📄 PAGE:\n{fetch_page(u)}\n")
+        out = out.replace(f"[FETCH: {u}]", f"\n\ud83d\udcc4 PAGE:\n{fetch_page(u)}\n")
     for c in re.findall(r'\[RUN: (.+?)\]', text, re.DOTALL):
-        out = out.replace(f"[RUN: {c}]", f"\n💻 OUTPUT:\n{run_cmd(c)}\n")
+        out = out.replace(f"[RUN: {c}]", f"\n\ud83d\udcbb OUTPUT:\n{run_cmd(c)}\n")
     for m in re.finditer(r'\[CREATE: (.+?) \| (.+?)\]', text, re.DOTALL):
         out = out.replace(m.group(0), f"\n{create_file(m.group(1), m.group(2))}\n")
     for fp in re.findall(r'\[READ: (.+?)\]', text):
-        out = out.replace(f"[READ: {fp}]", f"\n📁 FILE:\n{read_file(fp)}\n")
+        out = out.replace(f"[READ: {fp}]", f"\n\ud83d\udcc1 FILE:\n{read_file(fp)}\n")
     for dp in re.findall(r'\[LIST: (.+?)\]', text):
-        out = out.replace(f"[LIST: {dp}]", f"\n📂 DIR:\n{list_dir(dp)}\n")
+        out = out.replace(f"[LIST: {dp}]", f"\n\ud83d\udcc2 DIR:\n{list_dir(dp)}\n")
     for m in re.finditer(r'\[REMEMBER: (.+?) \| (.+?)\]', text, re.DOTALL):
         db_set_memory(uid, m.group(1).strip(), m.group(2).strip())
         out = out.replace(m.group(0), f"\nSAVED: {m.group(1).strip()}\n")
@@ -336,7 +475,7 @@ def call_ai(messages, model):
             if "error" in data:
                 err = str(data["error"])
                 if any(x in err.lower() for x in ["rate limit", "quota", "429"]):
-                    log.warning(f"Key محدود → التالي ({attempt+1})")
+                    log.warning(f"Key \u0645\u062d\u062f\u0648\u062f \u2192 \u0627\u0644\u062a\u0627\u0644\u064a ({attempt+1})")
                     last_err = err
                     time.sleep(1)
                     continue
@@ -352,7 +491,7 @@ def call_ai(messages, model):
             last_err = str(e)
             time.sleep(1)
             continue
-    raise RuntimeError(f"كل المفاتيح فشلت: {last_err}")
+    raise RuntimeError(f"\u0643\u0644 \u0627\u0644\u0645\u0641\u0627\u062a\u064a\u062d \u0641\u0634\u0644\u062a: {last_err}")
 
 def run_agent(uid, user_msg, force_model=None):
     db_add_message(uid, "user", user_msg)
@@ -375,12 +514,12 @@ def run_agent(uid, user_msg, force_model=None):
             db_add_message(uid, "assistant", resp)
             if has_error(processed):
                 db_add_message(uid, "user",
-                    f"=== Iteration {iteration} — ERROR ===\n{processed[:3500]}\nFix now.")
+                    f"=== Iteration {iteration} \u2014 ERROR ===\n{processed[:3500]}\nFix now.")
                 time.sleep(1)
                 continue
             else:
                 db_add_message(uid, "user",
-                    f"Results:\n{processed[:3000]}\nSummarize in Arabic.")
+                    f"Results:\n{processed[:3000]}\nSummarize in the same language the user used.")
                 try:
                     final = call_ai(
                         [{"role": "system", "content": system}] + db_get_history(uid), model)
@@ -394,8 +533,8 @@ def run_agent(uid, user_msg, force_model=None):
 
 def analyze_image(image_bytes, caption, uid):
     b64 = base64.b64encode(image_bytes).decode()
-    prompt = caption or "صف هذه الصورة بالتفصيل"
-    db_add_message(uid, "user", f"[صورة] {prompt}")
+    prompt = caption or "\u0635\u0641 \u0647\u0630\u0647 \u0627\u0644\u0635\u0648\u0631\u0629 \u0628\u0627\u0644\u062a\u0641\u0635\u064a\u0644"
+    db_add_message(uid, "user", f"[\u0635\u0648\u0631\u0629] {prompt}")
     key = get_next_key()
     resp = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -410,7 +549,7 @@ def analyze_image(image_bytes, caption, uid):
         }, timeout=60,
     )
     data = resp.json()
-    if "error" in data: return f"خطأ: {data['error']}"
+    if "error" in data: return f"\u062e\u0637\u0623: {data['error']}"
     result = data["choices"][0]["message"]["content"]
     db_add_message(uid, "assistant", result)
     return result
@@ -418,7 +557,7 @@ def analyze_image(image_bytes, caption, uid):
 def analyze_document(file_bytes, filename, caption, uid):
     save_path = WORKDIR / filename
     save_path.write_bytes(file_bytes)
-    return run_agent(uid, f"تم رفع الملف: {filename}. {caption or 'اقرأ الملف وقدم ملخصاً'}", "anthropic/claude-sonnet-4-5")
+    return run_agent(uid, f"\u062a\u0645 \u0631\u0641\u0639 \u0627\u0644\u0645\u0644\u0641: {filename}. {caption or '\u0627\u0642\u0631\u0623 \u0627\u0644\u0645\u0644\u0641 \u0648\u0642\u062f\u0645 \u0645\u0644\u062e\u0635\u0627\u064b'}", "anthropic/claude-sonnet-4-5")
 
 BOT_BUILDER_PROMPT = """You are an expert Telegram bot developer.
 Build a COMPLETE, production-ready Python bot using python-telegram-bot>=20.7.
@@ -447,178 +586,4 @@ restartPolicyMaxRetries = 10
 def build_bot(description):
     messages = [
         {"role": "system", "content": BOT_BUILDER_PROMPT},
-        {"role": "user", "content": f"اصنعلي بوت Telegram:\n{description}"}
-    ]
-    text = call_ai(messages, "anthropic/claude-opus-4-6")
-    def extract(s, e):
-        m = re.search(rf'{re.escape(s)}\n(.*?)\n{re.escape(e)}', text, re.DOTALL)
-        return m.group(1).strip() if m else ""
-    return {
-        "bot_code":    extract("===BOT_CODE===",     "===REQUIREMENTS==="),
-        "requirements":extract("===REQUIREMENTS===", "===PROCFILE==="),
-        "procfile":    extract("===PROCFILE===",      "===RAILWAY_TOML==="),
-        "railway_toml":extract("===RAILWAY_TOML===",  "===README==="),
-        "readme":      extract("===README===",         "===END==="),
-    }
-
-def create_bot_zip(parts, bot_name):
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr(f"{bot_name}/bot.py",           parts.get("bot_code", ""))
-        zf.writestr(f"{bot_name}/requirements.txt", parts.get("requirements", ""))
-        zf.writestr(f"{bot_name}/Procfile",         parts.get("procfile", "worker: python bot.py"))
-        zf.writestr(f"{bot_name}/railway.toml",     parts.get("railway_toml", ""))
-        zf.writestr(f"{bot_name}/README.md",        parts.get("readme", ""))
-    buf.seek(0)
-    return buf.read()
-
-# ─── HANDLERS ─────────────────────────────────────────────
-async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🤖 *SakanferBot v5 — جاهز!*\n\n"
-        f"🔑 {len(API_KEYS)} مفتاح نشط\n\n"
-        "🔍 بحث → Gemini 2.0 (Google)\n"
-        "💻 برمجة → Claude Sonnet 4.5\n"
-        "📄 ملفات → Claude Sonnet 4.5\n"
-        "🖼 صور → GPT-4o\n"
-        "👑 /opus → Claude Opus 4.6\n\n"
-        "/opus [مهمة] — أصعب المهام\n"
-        "/buildbot [وصف] — اصنع بوت\n"
-        "/memory — الذاكرة\n"
-        "/files — الملفات\n"
-        "/schedules — المجدولة\n"
-        "/clear — مسح المحادثة\n\n"
-        "اعطيني أي مهمة! 🚀",
-        parse_mode="Markdown"
-    )
-
-async def cmd_clear(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    db_clear_history(update.effective_user.id)
-    await update.message.reply_text("🔄 تم المسح")
-
-async def cmd_memory(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    mem = db_get_memory(update.effective_user.id)
-    res = "\n".join([f"• *{k}:* {v}" for k, v in mem.items()]) or "فارغة"
-    await update.message.reply_text(f"💾 *الذاكرة:*\n{res}", parse_mode="Markdown")
-
-async def cmd_files(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"📂 *الملفات:*\n{list_dir('')}", parse_mode="Markdown")
-
-async def cmd_schedules(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    scheds = db_list_schedules(update.effective_user.id)
-    if not scheds:
-        return await update.message.reply_text("📭 لا توجد مهام مجدولة")
-    lines = [f"#{s['id']} — {s['task']}\n⏱ كل {s['interval']}" for s in scheds]
-    await update.message.reply_text("⏰ *المجدولة:*\n\n" + "\n\n".join(lines), parse_mode="Markdown")
-
-async def cmd_opus(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    args = " ".join(ctx.args).strip() if ctx.args else ""
-    if not args:
-        return await update.message.reply_text(
-            "👑 *Claude Opus 4.6*\nمثال:\n`/opus اكتب خطة عمل كاملة`", parse_mode="Markdown")
-    uid = update.effective_user.id
-    status = await update.message.reply_text("👑 Claude Opus 4.6 يفكر…")
-    try:
-        result = await asyncio.get_event_loop().run_in_executor(
-            None, run_agent, uid, args, "anthropic/claude-opus-4-6")
-        chunks = [result[i:i+4000] for i in range(0, max(len(result), 1), 4000)]
-        await status.edit_text(f"👑 *Opus 4.6:*\n\n{chunks[0]}", parse_mode="Markdown")
-        for chunk in chunks[1:]:
-            await update.message.reply_text(chunk)
-    except Exception as e:
-        await status.edit_text(f"❌ خطأ: {e}")
-
-async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    status = await update.message.reply_text("⚙️ جاري التنفيذ…")
-    try:
-        result = await asyncio.get_event_loop().run_in_executor(
-            None, run_agent, uid, update.message.text, None)
-        chunks = [result[i:i+4000] for i in range(0, max(len(result), 1), 4000)]
-        await status.edit_text(chunks[0])
-        for chunk in chunks[1:]:
-            await update.message.reply_text(chunk)
-    except Exception as e:
-        await status.edit_text(f"❌ خطأ: {e}")
-
-async def handle_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    status = await update.message.reply_text("🖼 تحليل الصورة…")
-    try:
-        f = await (update.message.photo[-1]).get_file()
-        b = await f.download_as_bytearray()
-        result = await asyncio.get_event_loop().run_in_executor(
-            None, analyze_image, bytes(b), update.message.caption or "", uid)
-        await status.edit_text(result[:4000])
-    except Exception as e:
-        await status.edit_text(f"❌ خطأ: {e}")
-
-async def handle_document(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    doc = update.message.document
-    status = await update.message.reply_text(f"📄 معالجة {doc.file_name}…")
-    try:
-        f = await doc.get_file()
-        b = await f.download_as_bytearray()
-        result = await asyncio.get_event_loop().run_in_executor(
-            None, analyze_document, bytes(b), doc.file_name,
-            update.message.caption or "", uid)
-        chunks = [result[i:i+4000] for i in range(0, max(len(result), 1), 4000)]
-        await status.edit_text(chunks[0])
-        for chunk in chunks[1:]:
-            await update.message.reply_text(chunk)
-    except Exception as e:
-        await status.edit_text(f"❌ خطأ: {e}")
-
-async def cmd_build_bot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    args = " ".join(ctx.args).strip() if ctx.args else ""
-    if not args:
-        return await update.message.reply_text(
-            "🛠 مثال:\n`/buildbot بوت يجيب على أسئلة الرياضيات`", parse_mode="Markdown")
-    status = await update.message.reply_text("⚙️ Claude Opus يبني البوت…")
-    try:
-        parts = await asyncio.get_event_loop().run_in_executor(None, build_bot, args)
-        bot_name = re.sub(r'[^a-z0-9_]', '_', args[:25].lower().replace(' ', '_'))
-        zip_data = create_bot_zip(parts, bot_name)
-        await status.edit_text(f"✅ *البوت جاهز!*\n\n📦 `{bot_name}`", parse_mode="Markdown")
-        await update.message.reply_document(
-            document=io.BytesIO(zip_data), filename=f"{bot_name}.zip",
-            caption="bot.py + requirements.txt + Procfile + railway.toml ✅")
-    except Exception as e:
-        await status.edit_text(f"❌ خطأ: {e}")
-
-async def scheduler_job(ctx: ContextTypes.DEFAULT_TYPE):
-    for s in db_get_due_schedules():
-        uid, task = s["uid"], s["task"]
-        try:
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, run_agent, uid, f"[مهمة مجدولة]: {task}", None)
-            await ctx.bot.send_message(
-                chat_id=uid,
-                text=f"⏰ *مهمة مجدولة:*\n{task}\n\n{result[:3800]}",
-                parse_mode="Markdown")
-        except Exception as e:
-            log.error(f"Scheduler error: {e}")
-        finally:
-            db_update_schedule_next(s["id"], datetime.utcnow() + parse_interval(s["interval"]))
-
-def main():
-    db_init()
-    log.info(f"SakanferBot يشتغل | Keys={len(API_KEYS)}")
-    app = ApplicationBuilder().token(TG_TOKEN).build()
-    app.add_handler(CommandHandler("start",     cmd_start))
-    app.add_handler(CommandHandler("clear",     cmd_clear))
-    app.add_handler(CommandHandler("memory",    cmd_memory))
-    app.add_handler(CommandHandler("files",     cmd_files))
-    app.add_handler(CommandHandler("schedules", cmd_schedules))
-    app.add_handler(CommandHandler("buildbot",  cmd_build_bot))
-    app.add_handler(CommandHandler("opus",      cmd_opus))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    app.add_handler(MessageHandler(filters.PHOTO,        handle_photo))
-    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
-    app.job_queue.run_repeating(scheduler_job, interval=60, first=10)
-    log.info("🤖 جاهز!")
-    app.run_polling(drop_pending_updates=True)
-
-if __name__ == "__main__":
-    main()
+        {"role": "user", "content": f"\u0627\u0635\u0646\u0639\u0644
