@@ -20,25 +20,6 @@ log = logging.getLogger(__name__)
 
 TG_TOKEN = "8682338493:AAGbnyn71vnnOe7paPqPHPltQmejSUiyIZQ"
 
-api_key=[
- "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",
-     "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",
-
-"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",
-
-"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",
-
-"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",
-
-"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",
-
-"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"
-]# ============================================================
-# PUT YOUR KEYS HERE
-# ============================================================
-
-TG_TOKEN = "8682338493:AAGbnyn71vnnOe7paPqPHPltQmejSUiyIZQ"
-
 API_KEYS = [
     "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",
     "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",
@@ -48,9 +29,6 @@ API_KEYS = [
     "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",
     "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"
 ]
-
-# Example: "sk-or-v1-abc123..."
-# Get it from: openrouter.ai/keys -> Create Key
 
 # ============================================================
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
@@ -319,7 +297,7 @@ def fetch_page(url):
         t = r.text
         t = re.sub(r'<script[^>]*>.*?</script>', ' ', t, flags=re.DOTALL|re.I)
         t = re.sub(r'<style[^>]*>.*?</style>',  ' ', t, flags=re.DOTALL|re.I)
-        t = re.sub(r'<!--.*?-->',               ' ', t, flags=re.DOTALL)
+        t = re.sub(r'',               ' ', t, flags=re.DOTALL)
         t = re.sub(r'<[^>]+>',                  ' ', t)
         t = re.sub(r'&[a-z#0-9]+;',             ' ', t)
         t = re.sub(r'\s+',                       ' ', t).strip()
@@ -458,43 +436,45 @@ def call_ai(messages, model):
             continue
     raise RuntimeError(f"All keys failed: {last_err}")
 
+# ============================================================
+# UPDATED RUN_AGENT (NO MORE INFINITE LOOPS)
+# ============================================================
 def run_agent(uid, user_msg, force_model=None):
     db_add_message(uid, "user", user_msg)
     model = force_model or get_model(user_msg)
-    iteration = 0
-    while True:
-        iteration += 1
+    
+    # Max 3 iterations for safety and speed
+    for iteration in range(1, 4): 
         log.info(f"[uid={uid}] iter={iteration} model={model}")
         hist = db_get_history(uid)
         system = build_system(uid)
+        
         try:
             resp = call_ai([{"role": "system", "content": system}] + hist, model)
         except Exception as e:
             log.error(f"AI error: {e}")
-            time.sleep(3)
-            continue
+            return f"❌ API Error: {e}"
+
         processed = process_actions(resp, uid)
-        had_actions = processed != resp
-        if had_actions:
-            db_add_message(uid, "assistant", resp)
-            if has_error(processed):
-                db_add_message(uid, "user",
-                    f"=== Iteration {iteration} ERROR ===\n{processed[:3500]}\nFix it now.")
-                time.sleep(1)
-                continue
-            else:
-                db_add_message(uid, "user",
-                    f"Results:\n{processed[:3000]}\nSummarize in the same language the user used.")
-                try:
-                    final = call_ai(
-                        [{"role": "system", "content": system}] + db_get_history(uid), model)
-                    db_add_message(uid, "assistant", final)
-                    return final
-                except:
-                    return processed[:2000]
-        else:
+        
+        if processed == resp:
             db_add_message(uid, "assistant", resp)
             return resp
+            
+        db_add_message(uid, "assistant", resp)
+        if has_error(processed):
+            db_add_message(uid, "user", f"=== Iteration {iteration} ERROR ===\n{processed[:1000]}\nFix it.")
+            continue 
+        else:
+            db_add_message(uid, "user", f"Results:\n{processed[:2000]}\nSummarize now.")
+            try:
+                final = call_ai([{"role": "system", "content": system}] + db_get_history(uid), model)
+                db_add_message(uid, "assistant", final)
+                return final
+            except:
+                return processed[:2000]
+
+    return "⚠️ Limit reached. Try a simpler question."
 
 def analyze_image(image_bytes, caption, uid):
     b64 = base64.b64encode(image_bytes).decode()
