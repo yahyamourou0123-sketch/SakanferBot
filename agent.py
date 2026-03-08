@@ -1,7 +1,8 @@
 """
-AI Agent Ultimate v4 — 24/7 Telegram Bot
+AI Agent Ultimate v5 — 24/7 Telegram Bot
 Features: Infinite retry, permanent memory, scheduler,
-          file/image support, BOT BUILDER, INTELLIGENT MODEL ROUTING
+          file/image support, BOT BUILDER, SMART MODEL ROUTING,
+          UNLIMITED KEY ROTATION (comma-separated keys)
 """
 import os, requests, subprocess, re, time, logging, sqlite3, asyncio, base64, zipfile, io
 from datetime import datetime, timedelta
@@ -10,7 +11,7 @@ from duckduckgo_search import DDGS
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder, MessageHandler, CommandHandler,
-    filters, ContextTypes, CallbackQueryHandler
+    filters, ContextTypes
 )
 
 # ─── LOGGING ──────────────────────────────────────────────
@@ -20,33 +21,97 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ─── CONFIG — مفاتيح من Environment فقط ✅ ───────────────
-API_KEY  = os.environ.get("OPENROUTER_KEY", "")
+# ─── CONFIG ───────────────────────────────────────────────
 TG_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 WORKDIR  = Path(os.environ.get("WORKDIR", "/tmp/workspace"))
 DB_PATH  = Path(os.environ.get("DB_PATH",  "/tmp/agent_memory.db"))
 WORKDIR.mkdir(parents=True, exist_ok=True)
 
-if not API_KEY:
-    raise ValueError("OPENROUTER_KEY غير موجود في Environment Variables")
 if not TG_TOKEN:
     raise ValueError("TELEGRAM_TOKEN غير موجود في Environment Variables")
 
-# ─── MODEL ROUTER ✅ (محفوظ ومحسّن) ──────────────────────
+# ─── UNLIMITED KEY ROTATION ✅ ────────────────────────────
+# طريقة 1: مفاتيح مفصولة بفاصلة في Variable واحد
+#   OPENROUTER_KEYS = key1,key2,key3,...,key5000
+# طريقة 2: مفاتيح منفردة
+#   OPENROUTER_KEY, OPENROUTER_KEY2, OPENROUTER_KEY3, ...
+
+def _load_keys() -> list:
+    keys = []
+    # طريقة 1 — Variable واحد بفواصل (يدعم آلاف المفاتيح)
+    bulk = os.environ.get("OPENROUTER_KEYS", "")
+    if bulk:
+        keys += [k.strip() for k in bulk.split(",") if k.strip()]
+    # طريقة 2 — Variables منفردة (حتى 20)
+    for i in range(1, 21):
+        suffix = "" if i == 1 else str(i)
+        k = os.environ.get(f"OPENROUTER_KEY{suffix}", "")
+        if k.strip():
+            keys.append(k.strip())
+    # إزالة المكررات مع الحفاظ على الترتيب
+    seen = set()
+    unique = []
+    for k in keys:
+        if k not in seen:
+            seen.add(k)
+            unique.append(k)
+    return unique
+
+API_KEYS = _load_keys()
+
+if not API_KEYS:
+    raise ValueError("لا يوجد أي مفتاح — أضف OPENROUTER_KEYS أو OPENROUTER_KEY في Railway")
+
+log.info(f"✅ {len(API_KEYS)} مفتاح محمّل")
+
+_key_index = 0
+
+def get_next_key() -> str:
+    global _key_index
+    key = API_KEYS[_key_index % len(API_KEYS)]
+    _key_index += 1
+    return key
+
+# ─── SMART MODEL ROUTER ✅ ────────────────────────────────
+#
+# الخريطة الكاملة:
+#   بحث / أسئلة عامة / ترجمة  → Gemini 2.0 Flash  (مربوط بـ Google، أسرع وأرخص)
+#   برمجة / كود / debug        → Claude Sonnet 4.5  (الأقوى في البرمجة)
+#   رياضيات / منطق / تحليل    → Claude Sonnet 4.5  (أقوى في المنطق)
+#   تحليل ملفات / PDF          → Claude Sonnet 4.5  (أفضل في المستندات)
+#   صور                        → GPT-4o             (vision الأفضل)
+#   /opus — مهام صعبة معقدة   → Claude Opus 4.6    (الأذكى والأعمق)
+#   /buildbot                  → Claude Opus 4.6    (مشروع كبير يحتاج تفكير)
+
 CODING_TRIGGERS = [
     "برمج", "كود", "كوود", "code", "python", "javascript", "js",
     "html", "css", "sql", "bash", "linux", "script", "خطأ", "error",
     "fix", "bug", "تطبيق", "app", "api", "بوت", "bot", "صمم",
-    "اكتب كود", "ملف", "function", "class", "import", "debug"
+    "function", "class", "import", "debug", "dockerfile", "json",
+    "احسب", "رياضيات", "معادلة", "math", "حساب", "قانون",
+    "ملف", "pdf", "document", "اقرأ الملف", "حلل الملف"
+]
+
+SEARCH_TRIGGERS = [
+    "ابحث", "بحث", "search", "اخبار", "اخبر", "news", "ما هو", "من هو",
+    "متى", "اين", "كيف", "لماذا", "ما هي", "شرح", "explain",
+    "ترجم", "translate", "translation", "ترجمة", "معنى",
+    "سعر", "price", "طقس", "weather", "افضل", "مقارنة"
 ]
 
 def get_model(user_input: str) -> str:
     text = user_input.lower()
+    # برمجة/منطق/ملفات → Claude Sonnet
     if any(k in text for k in CODING_TRIGGERS):
-        log.info("Model: claude-sonnet-4-5 (برمجة)")
+        log.info("Model: claude-sonnet-4-5 (برمجة/منطق/ملفات)")
         return "anthropic/claude-sonnet-4-5"
-    log.info("Model: gpt-4o (عام)")
-    return "openai/gpt-4o"
+    # بحث/أسئلة/ترجمة → Gemini (مربوط بـ Google)
+    if any(k in text for k in SEARCH_TRIGGERS):
+        log.info("Model: gemini-2.0-flash (بحث/أسئلة/ترجمة)")
+        return "google/gemini-2.0-flash-001"
+    # الباقي → Gemini افتراضي (سريع ورخيص)
+    log.info("Model: gemini-2.0-flash (عام)")
+    return "google/gemini-2.0-flash-001"
 
 # ─── DATABASE ─────────────────────────────────────────────
 def db_connect():
@@ -86,39 +151,39 @@ def db_init():
         CREATE INDEX IF NOT EXISTS idx_sch_uid ON schedules(uid);
         """)
 
-def db_add_message(uid: int, role: str, content: str):
+def db_add_message(uid, role, content):
     with db_connect() as c:
         c.execute("INSERT INTO messages (uid,role,content) VALUES (?,?,?)", (uid, role, content))
         c.execute("""DELETE FROM messages WHERE uid=? AND id NOT IN (
                      SELECT id FROM messages WHERE uid=? ORDER BY id DESC LIMIT 60
                    )""", (uid, uid))
 
-def db_get_history(uid: int) -> list:
+def db_get_history(uid):
     with db_connect() as c:
         rows = c.execute(
             "SELECT role,content FROM messages WHERE uid=? ORDER BY id DESC LIMIT 40", (uid,)
         ).fetchall()
     return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
 
-def db_clear_history(uid: int):
+def db_clear_history(uid):
     with db_connect() as c:
         c.execute("DELETE FROM messages WHERE uid=?", (uid,))
 
-def db_set_memory(uid: int, key: str, value: str):
+def db_set_memory(uid, key, value):
     with db_connect() as c:
         c.execute("INSERT OR REPLACE INTO memory (uid,key,value) VALUES (?,?,?)", (uid, key, value))
 
-def db_get_memory(uid: int) -> dict:
+def db_get_memory(uid):
     with db_connect() as c:
         rows = c.execute("SELECT key,value FROM memory WHERE uid=?", (uid,)).fetchall()
     return {r["key"]: r["value"] for r in rows}
 
-def db_add_schedule(uid: int, task: str, interval: str, next_run: datetime):
+def db_add_schedule(uid, task, interval, next_run):
     with db_connect() as c:
         c.execute("INSERT INTO schedules (uid,task,interval,next_run) VALUES (?,?,?,?)",
                   (uid, task, interval, next_run.isoformat()))
 
-def db_get_due_schedules() -> list:
+def db_get_due_schedules():
     with db_connect() as c:
         rows = c.execute(
             "SELECT * FROM schedules WHERE active=1 AND next_run <= ?",
@@ -126,23 +191,23 @@ def db_get_due_schedules() -> list:
         ).fetchall()
     return [dict(r) for r in rows]
 
-def db_update_schedule_next(sid: int, next_run: datetime):
+def db_update_schedule_next(sid, next_run):
     with db_connect() as c:
         c.execute("UPDATE schedules SET next_run=? WHERE id=?", (next_run.isoformat(), sid))
 
-def db_list_schedules(uid: int) -> list:
+def db_list_schedules(uid):
     with db_connect() as c:
         rows = c.execute(
             "SELECT id,task,interval,next_run FROM schedules WHERE uid=? AND active=1", (uid,)
         ).fetchall()
     return [dict(r) for r in rows]
 
-def db_delete_schedule(sid: int, uid: int):
+def db_delete_schedule(sid, uid):
     with db_connect() as c:
         c.execute("UPDATE schedules SET active=0 WHERE id=? AND uid=?", (sid, uid))
 
 # ─── SYSTEM PROMPT ────────────────────────────────────────
-def build_system(uid: int) -> str:
+def build_system(uid):
     mem = db_get_memory(uid)
     mem_str = ""
     if mem:
@@ -151,7 +216,7 @@ def build_system(uid: int) -> str:
             mem_str += f"• {k}: {v}\n"
 
     return f"""You are an extremely intelligent autonomous AI Agent.
-Execute every task completely and independently. Never ask the user for help mid-task.
+Execute every task completely and independently. Never ask for help mid-task.
 Today: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}
 {mem_str}
 
@@ -176,7 +241,7 @@ RULES:
 5. Respond entirely in Arabic."""
 
 # ─── TOOLS ────────────────────────────────────────────────
-def search_web(query: str) -> str:
+def search_web(query):
     try:
         results = []
         with DDGS() as d:
@@ -186,7 +251,7 @@ def search_web(query: str) -> str:
     except Exception as e:
         return f"SEARCH_ERROR: {e}"
 
-def fetch_page(url: str) -> str:
+def fetch_page(url):
     try:
         h = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120"}
         r = requests.get(url.strip(), headers=h, timeout=20)
@@ -201,7 +266,7 @@ def fetch_page(url: str) -> str:
     except Exception as e:
         return f"FETCH_ERROR: {e}"
 
-def run_cmd(cmd: str) -> str:
+def run_cmd(cmd):
     try:
         r = subprocess.run(cmd, shell=True, capture_output=True,
                            text=True, timeout=120, cwd=str(WORKDIR))
@@ -214,7 +279,7 @@ def run_cmd(cmd: str) -> str:
     except Exception as e:
         return f"RUN_ERROR: {e}"
 
-def create_file(path: str, content: str) -> str:
+def create_file(path, content):
     try:
         full = WORKDIR / path.strip().lstrip("/")
         full.parent.mkdir(parents=True, exist_ok=True)
@@ -223,7 +288,7 @@ def create_file(path: str, content: str) -> str:
     except Exception as e:
         return f"CREATE_ERROR: {e}"
 
-def read_file(path: str) -> str:
+def read_file(path):
     try:
         full = WORKDIR / path.strip().lstrip("/")
         content = full.read_text(encoding="utf-8")
@@ -231,7 +296,7 @@ def read_file(path: str) -> str:
     except Exception as e:
         return f"READ_ERROR: {e}"
 
-def list_dir(path: str) -> str:
+def list_dir(path):
     try:
         target = WORKDIR / path.strip().lstrip("/") if path.strip() else WORKDIR
         items = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
@@ -241,7 +306,7 @@ def list_dir(path: str) -> str:
     except Exception as e:
         return f"LIST_ERROR: {e}"
 
-def parse_interval(s: str) -> timedelta:
+def parse_interval(s):
     s = s.lower().strip()
     if s == "hourly": return timedelta(hours=1)
     if s == "daily":  return timedelta(days=1)
@@ -253,7 +318,7 @@ def parse_interval(s: str) -> timedelta:
     return timedelta(hours=1)
 
 # ─── ACTION PROCESSOR ─────────────────────────────────────
-def process_actions(text: str, uid: int) -> str:
+def process_actions(text, uid):
     out = text
     for t in re.findall(r'\[THINK: (.+?)\]', text, re.DOTALL):
         out = out.replace(f"[THINK: {t}]", f"\n💭 {t.strip()}\n")
@@ -294,35 +359,59 @@ ERR_PATTERNS = [
     "traceback (most recent call last)", "syntaxerror", "nameerror",
     "typeerror", "valueerror", "importerror", "modulenotfounderror",
     "attributeerror", "keyerror", "indexerror", "filenotfounderror",
-    "connectionerror", "permissionerror", "oserror", "runtimeerror",
-    "stderr:\n", "create_error", "run_error", "fetch_error", "no such file"
+    "connectionerror", "oserror", "runtimeerror",
+    "stderr:\n", "create_error", "run_error", "fetch_error"
 ]
 
-def has_error(text: str) -> bool:
-    tl = text.lower()
-    return any(p in tl for p in ERR_PATTERNS)
+def has_error(text):
+    return any(p in text.lower() for p in ERR_PATTERNS)
 
-# ─── AI CALL ──────────────────────────────────────────────
-def call_ai(messages: list, model: str) -> str:
-    resp = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type":  "application/json",
-            "HTTP-Referer":  "https://sakanferbot.railway.app",
-        },
-        json={"model": model, "messages": messages, "max_tokens": 4096},
-        timeout=120,
-    )
-    data = resp.json()
-    if "error" in data:
-        raise RuntimeError(f"API Error: {data['error']}")
-    return data["choices"][0]["message"]["content"]
+# ─── AI CALL — Key Rotation تلقائي ───────────────────────
+def call_ai(messages, model):
+    last_err = None
+    attempts = len(API_KEYS) * 2
 
-# ─── MAIN AGENT LOOP — INFINITE RETRY ─────────────────────
-def run_agent(uid: int, user_msg: str) -> str:
+    for attempt in range(attempts):
+        key = get_next_key()
+        try:
+            resp = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type":  "application/json",
+                    "HTTP-Referer":  "https://sakanferbot.railway.app",
+                },
+                json={"model": model, "messages": messages, "max_tokens": 4096},
+                timeout=120,
+            )
+            data = resp.json()
+            if "error" in data:
+                err_msg = str(data["error"])
+                if any(x in err_msg.lower() for x in ["rate limit", "quota", "limit exceeded", "429"]):
+                    log.warning(f"Key محدود → Key التالي ({attempt+1}/{attempts})")
+                    last_err = err_msg
+                    time.sleep(0.5)
+                    continue
+                raise RuntimeError(f"API Error: {err_msg}")
+            return data["choices"][0]["message"]["content"]
+        except requests.exceptions.Timeout:
+            log.warning(f"Timeout → retry ({attempt+1})")
+            last_err = "timeout"
+            time.sleep(2)
+            continue
+        except RuntimeError:
+            raise
+        except Exception as e:
+            last_err = str(e)
+            time.sleep(1)
+            continue
+
+    raise RuntimeError(f"كل المفاتيح فشلت: {last_err}")
+
+# ─── MAIN AGENT LOOP ──────────────────────────────────────
+def run_agent(uid, user_msg, force_model=None):
     db_add_message(uid, "user", user_msg)
-    model     = get_model(user_msg)
+    model     = force_model or get_model(user_msg)
     iteration = 0
 
     while True:
@@ -363,14 +452,15 @@ def run_agent(uid: int, user_msg: str) -> str:
             db_add_message(uid, "assistant", resp)
             return resp
 
-# ─── IMAGE ANALYSIS ───────────────────────────────────────
-def analyze_image(image_bytes: bytes, caption: str, uid: int) -> str:
+# ─── IMAGE ANALYSIS — GPT-4o (الأفضل للصور) ──────────────
+def analyze_image(image_bytes, caption, uid):
     b64    = base64.b64encode(image_bytes).decode()
     prompt = caption or "صف هذه الصورة بالتفصيل"
     db_add_message(uid, "user", f"[صورة] {prompt}")
+    key  = get_next_key()
     resp = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
-        headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
         json={
             "model": "openai/gpt-4o",
             "max_tokens": 2048,
@@ -388,13 +478,14 @@ def analyze_image(image_bytes: bytes, caption: str, uid: int) -> str:
     db_add_message(uid, "assistant", result)
     return result
 
-# ─── DOCUMENT ANALYSIS ────────────────────────────────────
-def analyze_document(file_bytes: bytes, filename: str, caption: str, uid: int) -> str:
+# ─── DOCUMENT ANALYSIS — Claude Sonnet (أفضل للمستندات) ──
+def analyze_document(file_bytes, filename, caption, uid):
     save_path = WORKDIR / filename
     save_path.write_bytes(file_bytes)
-    return run_agent(uid, f"تم رفع الملف: {filename}. {caption or 'اقرأ الملف وقدم ملخصاً كاملاً'}")
+    prompt = f"تم رفع الملف: {filename}. {caption or 'اقرأ الملف وقدم ملخصاً كاملاً'}"
+    return run_agent(uid, prompt, "anthropic/claude-sonnet-4-5")
 
-# ─── BOT BUILDER ✅ (مصلح كامل) ──────────────────────────
+# ─── BOT BUILDER — Claude Opus 4.6 (الأفضل للمشاريع الكبيرة)
 BOT_BUILDER_PROMPT = """You are an expert Telegram bot developer.
 Build a COMPLETE, production-ready Python bot using python-telegram-bot>=20.7.
 
@@ -422,13 +513,13 @@ restartPolicyMaxRetries = 10
 [Arabic README: what it does, how to get token from BotFather, how to deploy on Railway]
 ===END==="""
 
-def build_bot(description: str) -> dict:
-    log.info(f"Building bot: {description[:60]}")
+def build_bot(description):
     messages = [
         {"role": "system", "content": BOT_BUILDER_PROMPT},
         {"role": "user",   "content": f"اصنعلي بوت Telegram:\n{description}"}
     ]
-    text = call_ai(messages, "anthropic/claude-sonnet-4-5")
+    # Opus 4.6 للمشاريع الكبيرة
+    text = call_ai(messages, "anthropic/claude-opus-4-6")
 
     def extract(s, e):
         m = re.search(rf'{re.escape(s)}\n(.*?)\n{re.escape(e)}', text, re.DOTALL)
@@ -442,7 +533,7 @@ def build_bot(description: str) -> dict:
         "readme":      extract("===README===",         "===END==="),
     }
 
-def create_bot_zip(parts: dict, bot_name: str) -> bytes:
+def create_bot_zip(parts, bot_name):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(f"{bot_name}/bot.py",           parts.get("bot_code", ""))
@@ -457,21 +548,35 @@ def create_bot_zip(parts: dict, bot_name: str) -> bytes:
 # ─── TELEGRAM HANDLERS ────────────────────────────────────
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🤖 *SakanferBot — جاهز!*\n\n"
-        "🧠 Claude للبرمجة | GPT-4o للمهام العامة\n"
-        "🔍 بحث عميق في المواقع\n"
-        "🔄 Retry لا نهائي حتى يشتغل الكود\n"
-        "💾 ذاكرة دائمة لا تُمسح\n"
-        "⏰ مهام مجدولة تلقائية\n"
-        "🖼 تحليل صور وملفات\n"
-        "🛠 يصنع بوتات Telegram جاهزة\n"
-        "☁️ يشتغل 24/7\n\n"
-        "/buildbot [وصف] — اصنع بوت جديد\n"
-        "/memory — الذاكرة الدائمة\n"
-        "/files — الملفات\n"
-        "/schedules — المهام المجدولة\n"
-        "/clear — مسح المحادثة\n\n"
+        "🤖 *SakanferBot v5 — جاهز!*\n\n"
+        f"🔑 {len(API_KEYS)} مفتاح نشط\n\n"
+        "*توزيع الذكاء:*\n"
+        "🔍 بحث/أسئلة/ترجمة → Gemini 2.0 (Google)\n"
+        "💻 برمجة/كود/منطق → Claude Sonnet 4.5\n"
+        "📄 ملفات/PDF → Claude Sonnet 4.5\n"
+        "🖼 صور → GPT-4o Vision\n"
+        "👑 `/opus` → Claude Opus 4.6\n"
+        "🛠 `/buildbot` → Claude Opus 4.6\n\n"
+        "*الأوامر:*\n"
+        "`/opus [مهمة]` — أصعب المهام\n"
+        "`/buildbot [وصف]` — اصنع بوت\n"
+        "`/memory` — الذاكرة\n"
+        "`/files` — الملفات\n"
+        "`/schedules` — المجدولة\n"
+        "`/keys` — حالة المفاتيح\n"
+        "`/clear` — مسح المحادثة\n\n"
         "اعطيني أي مهمة! 🚀",
+        parse_mode="Markdown"
+    )
+
+async def cmd_keys(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        f"*حالة المفاتيح:*\n\n"
+        f"✅ {len(API_KEYS)} مفتاح نشط\n"
+        f"🔄 Rotation تلقائي\n\n"
+        f"*لإضافة مفاتيح:*\n"
+        f"في Railway → Variables:\n"
+        f"`OPENROUTER_KEYS = key1,key2,key3,...`",
         parse_mode="Markdown"
     )
 
@@ -495,12 +600,32 @@ async def cmd_schedules(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "⏰ *المهام المجدولة:*\n\n" + "\n\n".join(lines), parse_mode="Markdown")
 
+async def cmd_opus(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    args = " ".join(ctx.args).strip() if ctx.args else ""
+    if not args:
+        return await update.message.reply_text(
+            "👑 *Claude Opus 4.6*\n\n"
+            "للمهام الصعبة والمعقدة\n\n"
+            "مثال:\n`/opus اكتب خطة عمل كاملة لمشروع تقني`",
+            parse_mode="Markdown")
+    uid    = update.effective_user.id
+    status = await update.message.reply_text("👑 Claude Opus 4.6 يفكر…")
+    try:
+        result = await asyncio.get_event_loop().run_in_executor(
+            None, run_agent, uid, args, "anthropic/claude-opus-4-6")
+        chunks = [result[i:i+4000] for i in range(0, max(len(result), 1), 4000)]
+        await status.edit_text(f"👑 *Opus 4.6:*\n\n{chunks[0]}", parse_mode="Markdown")
+        for chunk in chunks[1:]:
+            await update.message.reply_text(chunk)
+    except Exception as e:
+        await status.edit_text(f"❌ خطأ: {e}")
+
 async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     uid    = update.effective_user.id
     status = await update.message.reply_text("⚙️ جاري التنفيذ…")
     try:
         result = await asyncio.get_event_loop().run_in_executor(
-            None, run_agent, uid, update.message.text)
+            None, run_agent, uid, update.message.text, None)
         chunks = [result[i:i+4000] for i in range(0, max(len(result), 1), 4000)]
         await status.edit_text(chunks[0])
         for chunk in chunks[1:]:
@@ -541,17 +666,16 @@ async def cmd_build_bot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     args = " ".join(ctx.args).strip() if ctx.args else ""
     if not args:
         return await update.message.reply_text(
-            "🤖 *صانع البوتات*\n\nمثال:\n"
-            "`/buildbot بوت يجيب على أسئلة الرياضيات`\n"
-            "`/buildbot بوت يترجم من العربي للإنجليزي`",
+            "🛠 *صانع البوتات*\n\nمثال:\n"
+            "`/buildbot بوت يجيب على أسئلة الرياضيات`",
             parse_mode="Markdown")
-    status = await update.message.reply_text("⚙️ جاري بناء البوت…")
+    status = await update.message.reply_text("⚙️ Claude Opus يبني البوت…")
     try:
         parts    = await asyncio.get_event_loop().run_in_executor(None, build_bot, args)
         bot_name = re.sub(r'[^a-z0-9_]', '_', args[:25].lower().replace(' ', '_'))
         zip_data = create_bot_zip(parts, bot_name)
         await status.edit_text(
-            f"✅ *البوت جاهز!*\n\n📦 `{bot_name}`\n\n{parts.get('readme','')[:500]}",
+            f"✅ *البوت جاهز!*\n\n📦 `{bot_name}`\n\n{parts.get('readme','')[:400]}",
             parse_mode="Markdown")
         await update.message.reply_document(
             document=io.BytesIO(zip_data),
@@ -566,7 +690,7 @@ async def scheduler_job(ctx: ContextTypes.DEFAULT_TYPE):
         uid, task = s["uid"], s["task"]
         try:
             result = await asyncio.get_event_loop().run_in_executor(
-                None, run_agent, uid, f"[مهمة مجدولة]: {task}")
+                None, run_agent, uid, f"[مهمة مجدولة]: {task}", None)
             await ctx.bot.send_message(
                 chat_id=uid,
                 text=f"⏰ *مهمة مجدولة:*\n{task}\n\n{result[:3800]}",
@@ -579,7 +703,7 @@ async def scheduler_job(ctx: ContextTypes.DEFAULT_TYPE):
 # ─── MAIN ─────────────────────────────────────────────────
 def main():
     db_init()
-    log.info(f"DB={DB_PATH} | Workspace={WORKDIR}")
+    log.info(f"DB={DB_PATH} | Workspace={WORKDIR} | Keys={len(API_KEYS)}")
 
     app = ApplicationBuilder().token(TG_TOKEN).build()
     app.add_handler(CommandHandler("start",     cmd_start))
@@ -588,12 +712,14 @@ def main():
     app.add_handler(CommandHandler("files",     cmd_files))
     app.add_handler(CommandHandler("schedules", cmd_schedules))
     app.add_handler(CommandHandler("buildbot",  cmd_build_bot))
+    app.add_handler(CommandHandler("opus",      cmd_opus))
+    app.add_handler(CommandHandler("keys",      cmd_keys))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     app.add_handler(MessageHandler(filters.PHOTO,        handle_photo))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.job_queue.run_repeating(scheduler_job, interval=60, first=10)
 
-    log.info("🤖 SakanferBot يشتغل!")
+    log.info("🤖 SakanferBot v5 يشتغل!")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
