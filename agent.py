@@ -19,12 +19,8 @@ log = logging.getLogger(__name__)
 # ============================================================
 
 TG_TOKEN = "8682338493:AAGbnyn71vnnOe7paPqPHPltQmejSUiyIZQ"
-# Example: "7891234567:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
-# Get it from: Telegram -> @BotFather -> /mybots -> your bot -> API Token
 
-API_KEYS = [
-    "PUT_YOUR_OPENROUTER_KEY_HERE",
-        "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",
+api_key= "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",
      "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",
 
 "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",
