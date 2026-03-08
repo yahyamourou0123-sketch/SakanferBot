@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 # ضع مفاتيحك هنا ↓↓↓
 # ════════════════════════════════════════════════════
 
-TG_TOKEN = "8682338493:AAGYqHBLnAqazQN_-2TJTFs3GaTSDORymgo"
+TG_TOKEN = "8682338493:AAGbnyn71vnnOe7paPqPHPltQmejSUiyIZQ"
 
 # كيف تجيبه: افتح Telegram → @BotFather → /mybots → بوتك → API Token
 
