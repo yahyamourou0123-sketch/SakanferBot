@@ -15,46 +15,27 @@ logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", level=logg
 log = logging.getLogger(__name__)
 
 # ============================================================
-# PUT YOUR KEYS HERE
+# KEYS FROM RAILWAY ENVIRONMENT VARIABLES
 # ============================================================
 
-TG_TOKEN = "8682338493:AAGbnyn71vnnOe7paPqPHPltQmejSUiyIZQ"
+TG_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
+if not TG_TOKEN:
+    raise ValueError("ERROR: Set TELEGRAM_TOKEN in Railway Variables")
 
-API_KEYS = [
-    "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",
-    "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",
-    "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",
-    "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",
-    "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",
-    "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",
-        "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",
-    # "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",
+_keys_env = os.environ.get("OPENROUTER_KEYS", "")
+API_KEYS = [k.strip() for k in _keys_env.split(",") if k.strip()]
+if not API_KEYS:
+    raise ValueError("ERROR: Set OPENROUTER_KEYS in Railway Variables")
 
-"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",
-
-"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",
-
-"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",
-
-"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",
-
-"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"
-]
+log.info(f"TG Token loaded | Keys: {len(API_KEYS)}")
 
 # ============================================================
-# DO NOT CHANGE ANYTHING BELOW THIS LINE
+# SETTINGS
 # ============================================================
 
 WORKDIR = Path("/tmp/workspace")
 DB_PATH = Path("/tmp/agent_memory.db")
 WORKDIR.mkdir(parents=True, exist_ok=True)
-
-if "PUT_YOUR_TELEGRAM" in TG_TOKEN:
-    raise ValueError("ERROR: Set your TELEGRAM TOKEN in TG_TOKEN")
-if "PUT_YOUR_OPENROUTER" in API_KEYS[0]:
-    raise ValueError("ERROR: Set your OPENROUTER KEY in API_KEYS")
-
-log.info(f"Keys loaded: {len(API_KEYS)}")
 
 _key_index = 0
 def get_next_key():
@@ -68,8 +49,8 @@ CODING_TRIGGERS = [
     "script", "error", "fix", "bug", "app", "api", "bot", "function",
     "class", "import", "debug", "dockerfile", "math", "pdf", "file",
     "programme", "erreur", "application", "developpe",
-    "barmej", "kod", "5ata2", "كود", "برمج", "خطأ", "تطبيق",
-    "بوت", "احسب", "رياضيات", "معادلة", "ملف", "صمم", "كوود"
+    "barmej", "kod", "5ata2", "kod",
+    "barmej", "khata2", "application",
 ]
 
 def get_model(user_input):
@@ -77,6 +58,10 @@ def get_model(user_input):
     if any(k in text for k in CODING_TRIGGERS):
         return "anthropic/claude-sonnet-4-5"
     return "google/gemini-2.0-flash-001"
+
+# ============================================================
+# DATABASE
+# ============================================================
 
 def db_connect():
     conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
@@ -163,6 +148,10 @@ def db_delete_schedule(sid, uid):
     with db_connect() as c:
         c.execute("UPDATE schedules SET active=0 WHERE id=? AND uid=?", (sid, uid))
 
+# ============================================================
+# SYSTEM PROMPT
+# ============================================================
+
 SYSTEM_PROMPT = """You are Sakanfer - an elite AI agent and expert software engineer.
 
 === LANGUAGE RULES (MOST IMPORTANT) ===
@@ -172,13 +161,13 @@ TUNISIAN DIALECT & FRANCO-ARABIC (TOP PRIORITY):
 - You fully understand Franco-Arabic (Arabizi/Tunisian dialect)
 - Examples you recognize: chnahwa, bark, 3lah, kifesh, bhi, ya5i, sahbi,
   wesh, 9rib, mazel, barcha, chwaya, taw, fama, ma3ndich, nheb, huni,
-  bch, mrigel, 3aychek, barka, yezzi, chkoun, win, ki, 3lech, taw
+  bch, mrigel, 3aychek, barka, yezzi, chkoun, win, ki, 3lech
 - When user writes in Franco or Tunisian dialect -> ALWAYS reply in same style
 - NEVER use Egyptian, Syrian, or formal Arabic if user speaks Tunisian
 - NEVER change language without reason
 
 French -> reply in French
-English -> reply in English  
+English -> reply in English
 Arabic -> reply in Arabic
 Any mix -> adapt naturally
 
@@ -198,98 +187,39 @@ Even short or unclear messages -> ALWAYS reply, never stay silent.
 [SCHEDULE: task | interval]  -> schedule task (daily/hourly/weekly/Xm/Xh)
 [UNSCHEDULE: id]             -> cancel scheduled task
 
-=== THINKING RULES ===
-1. ALWAYS start with [THINK:] - think step by step out loud
-2. Before any solution ask yourself:
-   - What is the REAL problem behind the question?
-   - Is there deeper context not mentioned?
-   - What is the optimal long-term solution?
-   - Are there risks or side effects?
-3. For complex projects: break into clear phases
-4. If context is unclear: ask ONE precise question
-
-=== CODING & SELF-DEBUGGING RULES ===
-PHASE 1 - PLANNING:
-- Understand ALL requirements before writing one line
-- Choose correct architecture (OOP / functional / modular)
-- Identify required libraries upfront
-
-PHASE 2 - WRITING:
-- Write clean code with clear comments
-- Use descriptive variable names
-- Handle all edge cases
-- Add comprehensive error handling
-
-PHASE 3 - EXECUTION & SELF-REPAIR:
-[RUN: pip install required_packages]
-[RUN: python file.py]
-
-If error appears:
--> Read the full error carefully
--> Identify the exact line and root cause
--> Change only what is necessary
--> Re-execute
--> Repeat until complete success - NEVER give up
-
-If same error appears 3 times:
--> Change strategy completely
--> Search for alternative solution
--> Try different library if needed
-
-PHASE 4 - VERIFICATION:
-- Confirm output is 100% correct
-- Test multiple cases
-- Provide clear summary of what was done
+=== THINKING & CODING RULES ===
+1. ALWAYS start with [THINK:] - think step by step
+2. Before any solution: what is the REAL problem? any deeper context?
+3. CODING: plan -> write clean code -> install -> test -> fix -> repeat until success
+4. If same error 3 times -> change strategy completely
+5. NEVER give up
 
 === TEACHING RULES ===
-1. Start with the big picture - what and why?
-2. Move to details gradually
-3. Use real concrete examples
-4. Compare technical concepts to everyday things
-5. Summarize key points at the end
+- Start with big picture, then details
+- Use real examples
+- Adapt to user level (beginner/intermediate/advanced)
 
-Levels:
-- Beginner: simple language + many examples + small steps
-- Intermediate: concepts + practical application + best practices
-- Advanced: technical depth + optimizations + comparisons
-
-=== COMPLEX PROJECT RULES ===
-STEP 1 - Full understanding (goal, user, constraints, platform)
-STEP 2 - Architecture planning (structure, modules, integration points)
-STEP 3 - Phased execution (MVP first, test each phase)
-STEP 4 - Optimization (performance, security, features)
-
-=== MEMORY RULES ===
-Auto-save with [REMEMBER:]:
-- User name and preferred language
-- Preferred programming languages
-- Current projects and their status
-- Recurring errors and their solutions
-- Long-term goals
-- Any important info mentioned
+=== MEMORY ===
+Auto-save with [REMEMBER:]: user name, language, projects, errors, goals
 
 === PHILOSOPHY ===
-You are a real thinking partner, not just a command executor.
-Your goal is the CORRECT answer, not the fast one.
-Every problem has a solution - your job is to find it no matter what.
-
-If you don't know something -> search
-If code fails -> fix it
-If question is unclear -> clarify
-If task is hard -> break it down
-NEVER give up."""
+Real thinking partner. Correct answer over fast answer.
+Every problem has a solution. Find it no matter what."""
 
 
 def build_system(uid):
     mem = db_get_memory(uid)
     mem_str = ""
     if mem:
-        mem_str = "\n\n=== PERSISTENT MEMORY (what you know about this user) ===\n"
+        mem_str = "\n\n=== PERSISTENT MEMORY ===\n"
         for k, v in mem.items():
             mem_str += f"- {k}: {v}\n"
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     return f"{SYSTEM_PROMPT}\n\nCurrent time: {now}{mem_str}"
 
+# ============================================================
+# TOOLS
+# ============================================================
 
 def search_web(query):
     try:
@@ -307,12 +237,10 @@ def fetch_page(url):
         r = requests.get(url.strip(), headers=h, timeout=20)
         t = r.text
         t = re.sub(r'<script[^>]*>.*?</script>', ' ', t, flags=re.DOTALL|re.I)
-        t = re.sub(r'<style[^>]*>.*?</style>',  ' ', t, flags=re.DOTALL|re.I)
-        t = re.sub(r'',               ' ', t, flags=re.DOTALL)
-        t = re.sub(r'<[^>]+>',                  ' ', t)
-        t = re.sub(r'&[a-z#0-9]+;',             ' ', t)
-        t = re.sub(r'\s+',                       ' ', t).strip()
-        return t[:6000] + ("...[truncated]" if len(t) > 6000 else "")
+        t = re.sub(r'<style[^>]*>.*?</style>', ' ', t, flags=re.DOTALL|re.I)
+        t = re.sub(r'<[^>]+>', ' ', t)
+        t = re.sub(r'\s+', ' ', t).strip()
+        return t[:6000]
     except Exception as e:
         return f"FETCH_ERROR: {e}"
 
@@ -329,7 +257,7 @@ def run_cmd(cmd):
     except Exception as e:
         return f"RUN_ERROR: {e}"
 
-def create_file(path, content):
+def create_file_tool(path, content):
     try:
         full = WORKDIR / path.strip().lstrip("/")
         full.parent.mkdir(parents=True, exist_ok=True)
@@ -338,14 +266,14 @@ def create_file(path, content):
     except Exception as e:
         return f"CREATE_ERROR: {e}"
 
-def read_file(path):
+def read_file_tool(path):
     try:
         full = WORKDIR / path.strip().lstrip("/")
         return full.read_text(encoding="utf-8")[:5000]
     except Exception as e:
         return f"READ_ERROR: {e}"
 
-def list_dir(path):
+def list_dir_tool(path):
     try:
         target = WORKDIR / path.strip().lstrip("/") if path.strip() else WORKDIR
         items = sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name))
@@ -357,7 +285,7 @@ def list_dir(path):
 def parse_interval(s):
     s = s.lower().strip()
     if s == "hourly": return timedelta(hours=1)
-    if s == "daily":  return timedelta(days=1)
+    if s == "daily": return timedelta(days=1)
     if s == "weekly": return timedelta(weeks=1)
     m = re.match(r'^(\d+)m$', s)
     if m: return timedelta(minutes=int(m.group(1)))
@@ -376,11 +304,11 @@ def process_actions(text, uid):
     for c in re.findall(r'\[RUN: (.+?)\]', text, re.DOTALL):
         out = out.replace(f"[RUN: {c}]", f"\n💻 OUTPUT:\n{run_cmd(c)}\n")
     for m in re.finditer(r'\[CREATE: (.+?) \| (.+?)\]', text, re.DOTALL):
-        out = out.replace(m.group(0), f"\n{create_file(m.group(1), m.group(2))}\n")
+        out = out.replace(m.group(0), f"\n{create_file_tool(m.group(1), m.group(2))}\n")
     for fp in re.findall(r'\[READ: (.+?)\]', text):
-        out = out.replace(f"[READ: {fp}]", f"\n📁 FILE:\n{read_file(fp)}\n")
+        out = out.replace(f"[READ: {fp}]", f"\n📁 FILE:\n{read_file_tool(fp)}\n")
     for dp in re.findall(r'\[LIST: (.+?)\]', text):
-        out = out.replace(f"[LIST: {dp}]", f"\n📂 DIR:\n{list_dir(dp)}\n")
+        out = out.replace(f"[LIST: {dp}]", f"\n📂 DIR:\n{list_dir_tool(dp)}\n")
     for m in re.finditer(r'\[REMEMBER: (.+?) \| (.+?)\]', text, re.DOTALL):
         db_set_memory(uid, m.group(1).strip(), m.group(2).strip())
         out = out.replace(m.group(0), f"\nSAVED: {m.group(1).strip()}\n")
@@ -429,7 +357,6 @@ def call_ai(messages, model):
             if "error" in data:
                 err = str(data["error"])
                 if any(x in err.lower() for x in ["rate limit", "quota", "429"]):
-                    log.warning(f"Key rate limited, trying next ({attempt+1})")
                     last_err = err
                     time.sleep(1)
                     continue
@@ -447,45 +374,43 @@ def call_ai(messages, model):
             continue
     raise RuntimeError(f"All keys failed: {last_err}")
 
-# ============================================================
-# UPDATED RUN_AGENT (NO MORE INFINITE LOOPS)
-# ============================================================
 def run_agent(uid, user_msg, force_model=None):
     db_add_message(uid, "user", user_msg)
     model = force_model or get_model(user_msg)
-    
-    # Max 3 iterations for safety and speed
-    for iteration in range(1, 4): 
+    iteration = 0
+    while True:
+        iteration += 1
         log.info(f"[uid={uid}] iter={iteration} model={model}")
         hist = db_get_history(uid)
         system = build_system(uid)
-        
         try:
             resp = call_ai([{"role": "system", "content": system}] + hist, model)
         except Exception as e:
             log.error(f"AI error: {e}")
-            return f"❌ API Error: {e}"
-
+            time.sleep(3)
+            continue
         processed = process_actions(resp, uid)
-        
-        if processed == resp:
+        had_actions = processed != resp
+        if had_actions:
+            db_add_message(uid, "assistant", resp)
+            if has_error(processed):
+                db_add_message(uid, "user",
+                    f"=== Iteration {iteration} ERROR ===\n{processed[:3500]}\nFix it now.")
+                time.sleep(1)
+                continue
+            else:
+                db_add_message(uid, "user",
+                    f"Results:\n{processed[:3000]}\nSummarize in the same language the user used.")
+                try:
+                    final = call_ai(
+                        [{"role": "system", "content": system}] + db_get_history(uid), model)
+                    db_add_message(uid, "assistant", final)
+                    return final
+                except:
+                    return processed[:2000]
+        else:
             db_add_message(uid, "assistant", resp)
             return resp
-            
-        db_add_message(uid, "assistant", resp)
-        if has_error(processed):
-            db_add_message(uid, "user", f"=== Iteration {iteration} ERROR ===\n{processed[:1000]}\nFix it.")
-            continue 
-        else:
-            db_add_message(uid, "user", f"Results:\n{processed[:2000]}\nSummarize now.")
-            try:
-                final = call_ai([{"role": "system", "content": system}] + db_get_history(uid), model)
-                db_add_message(uid, "assistant", final)
-                return final
-            except:
-                return processed[:2000]
-
-    return "⚠️ Limit reached. Try a simpler question."
 
 def analyze_image(image_bytes, caption, uid):
     b64 = base64.b64encode(image_bytes).decode()
@@ -510,22 +435,15 @@ def analyze_image(image_bytes, caption, uid):
     db_add_message(uid, "assistant", result)
     return result
 
-def analyze_document(file_bytes, filename, caption, uid):
-    save_path = WORKDIR / filename
-    save_path.write_bytes(file_bytes)
-    return run_agent(uid, f"File uploaded: {filename}. {caption or 'Read this file and summarize it'}", "anthropic/claude-sonnet-4-5")
-
 BOT_BUILDER_PROMPT = """You are an expert Telegram bot developer.
-Build a COMPLETE, production-ready Python bot using python-telegram-bot>=20.7.
-- Use os.environ.get("TELEGRAM_TOKEN") for token
-- Handle all edge cases
-- Fully functional with zero modifications needed
+Build a COMPLETE production-ready Python bot using python-telegram-bot>=20.7.
+Use os.environ.get("TELEGRAM_TOKEN") for token.
 
-Output EXACTLY this format:
+Output EXACTLY:
 ===BOT_CODE===
-[full python code]
+[code]
 ===REQUIREMENTS===
-[pip packages one per line]
+[packages]
 ===PROCFILE===
 worker: python bot.py
 ===RAILWAY_TOML===
@@ -536,13 +454,13 @@ builder = "NIXPACKS"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 ===README===
-[Arabic README with setup instructions]
+[Arabic README]
 ===END==="""
 
 def build_bot(description):
     messages = [
         {"role": "system", "content": BOT_BUILDER_PROMPT},
-        {"role": "user", "content": f"Build this Telegram bot:\n{description}"}
+        {"role": "user", "content": f"Build this bot:\n{description}"}
     ]
     text = call_ai(messages, "anthropic/claude-opus-4-6")
     def extract(s, e):
@@ -567,20 +485,18 @@ def create_bot_zip(parts, bot_name):
     buf.seek(0)
     return buf.read()
 
+# ============================================================
+# HANDLERS
+# ============================================================
+
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "SakanferBot v5 Ready!\n\n"
+        f"SakanferBot v5 Ready!\n"
         f"Keys: {len(API_KEYS)} active\n\n"
-        "Search -> Gemini 2.0\n"
-        "Coding -> Claude Sonnet 4.5\n"
-        "Images -> GPT-4o\n"
-        "/opus -> Claude Opus 4.6\n\n"
         "Commands:\n"
-        "/opus [task] - hardest tasks\n"
-        "/buildbot [description] - build a bot\n"
+        "/opus [task] - Claude Opus 4.6\n"
+        "/buildbot [desc] - build a bot\n"
         "/memory - show memory\n"
-        "/files - show files\n"
-        "/schedules - show schedules\n"
         "/clear - clear history\n\n"
         "Talk to me in any language!"
     )
@@ -593,16 +509,6 @@ async def cmd_memory(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     mem = db_get_memory(update.effective_user.id)
     res = "\n".join([f"- {k}: {v}" for k, v in mem.items()]) or "Empty"
     await update.message.reply_text(f"Memory:\n{res}")
-
-async def cmd_files(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Files:\n{list_dir('')}")
-
-async def cmd_schedules(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    scheds = db_list_schedules(update.effective_user.id)
-    if not scheds:
-        return await update.message.reply_text("No scheduled tasks")
-    lines = [f"#{s['id']} - {s['task']}\nEvery {s['interval']}" for s in scheds]
-    await update.message.reply_text("Schedules:\n\n" + "\n\n".join(lines))
 
 async def cmd_opus(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     args = " ".join(ctx.args).strip() if ctx.args else ""
@@ -645,23 +551,6 @@ async def handle_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await status.edit_text(f"Error: {e}")
 
-async def handle_document(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    doc = update.message.document
-    status = await update.message.reply_text(f"Processing {doc.file_name}...")
-    try:
-        f = await doc.get_file()
-        b = await f.download_as_bytearray()
-        result = await asyncio.get_event_loop().run_in_executor(
-            None, analyze_document, bytes(b), doc.file_name,
-            update.message.caption or "", uid)
-        chunks = [result[i:i+4000] for i in range(0, max(len(result), 1), 4000)]
-        await status.edit_text(chunks[0])
-        for chunk in chunks[1:]:
-            await update.message.reply_text(chunk)
-    except Exception as e:
-        await status.edit_text(f"Error: {e}")
-
 async def cmd_build_bot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     args = " ".join(ctx.args).strip() if ctx.args else ""
     if not args:
@@ -696,16 +585,13 @@ def main():
     db_init()
     log.info(f"SakanferBot starting | Keys={len(API_KEYS)}")
     app = ApplicationBuilder().token(TG_TOKEN).build()
-    app.add_handler(CommandHandler("start",     cmd_start))
-    app.add_handler(CommandHandler("clear",     cmd_clear))
-    app.add_handler(CommandHandler("memory",    cmd_memory))
-    app.add_handler(CommandHandler("files",     cmd_files))
-    app.add_handler(CommandHandler("schedules", cmd_schedules))
-    app.add_handler(CommandHandler("buildbot",  cmd_build_bot))
-    app.add_handler(CommandHandler("opus",      cmd_opus))
+    app.add_handler(CommandHandler("start",    cmd_start))
+    app.add_handler(CommandHandler("clear",    cmd_clear))
+    app.add_handler(CommandHandler("memory",   cmd_memory))
+    app.add_handler(CommandHandler("opus",     cmd_opus))
+    app.add_handler(CommandHandler("buildbot", cmd_build_bot))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    app.add_handler(MessageHandler(filters.PHOTO,        handle_photo))
-    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.job_queue.run_repeating(scheduler_job, interval=60, first=10)
     log.info("Bot ready!")
     app.run_polling(drop_pending_updates=True)
