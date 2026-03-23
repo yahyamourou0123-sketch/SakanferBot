@@ -1,0 +1,105 @@
+import React from 'react';
+import { WeatherData } from '../utils/types';
+
+const ICONS: Record<string, string> = {
+  sunny:          '☀️',
+  partly_cloudy:  '⛅',
+  cloudy:         '☁️',
+  foggy:          '🌫️',
+  drizzle:        '🌦️',
+  rainy:          '🌧️',
+  heavy_rain:     '⛈️',
+  snowy:          '❄️',
+  heavy_snow:     '🌨️',
+  thunderstorm:   '⛈️',
+};
+
+const BG: Record<string, string> = {
+  sunny:         'from-amber-500/20 to-orange-500/10',
+  partly_cloudy: 'from-sky-500/20 to-blue-500/10',
+  cloudy:        'from-zinc-500/20 to-zinc-600/10',
+  foggy:         'from-zinc-400/20 to-zinc-500/10',
+  drizzle:       'from-blue-500/20 to-sky-400/10',
+  rainy:         'from-blue-600/20 to-indigo-500/10',
+  heavy_rain:    'from-indigo-600/20 to-blue-700/10',
+  snowy:         'from-sky-200/20 to-blue-200/10',
+  heavy_snow:    'from-sky-100/20 to-white/10',
+  thunderstorm:  'from-violet-600/20 to-gray-700/10',
+};
+
+const CONDITION_LABEL: Record<string, string> = {
+  sunny:         'Mchammes ☀️',
+  partly_cloudy: 'Ghyem chwiya ⛅',
+  cloudy:        'Meghayyem ☁️',
+  foggy:         'Dayba 🌫️',
+  drizzle:       'Chta khfifa 🌦️',
+  rainy:         'Chta 🌧️',
+  heavy_rain:    'Chta barsha ⛈️',
+  snowy:         'Thelj ❄️',
+  heavy_snow:    'Thelj barsha 🌨️',
+  thunderstorm:  'Ra3d w bra9 ⛈️',
+};
+
+interface WeatherCardProps {
+  data: WeatherData;
+}
+
+const WeatherCard: React.FC<WeatherCardProps> = ({ data }) => {
+  const icon = ICONS[data.condition]   || '🌤️';
+  const bg   = BG[data.condition]      || BG.partly_cloudy;
+  const label = CONDITION_LABEL[data.condition] || data.condition;
+
+  return (
+    <div className={`mt-2 rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br ${bg} backdrop-blur-sm`}>
+      {/* Main */}
+      <div className="p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-lg font-black text-white">{data.city}</div>
+            <div className="text-sm text-zinc-400 mt-0.5">{label}</div>
+          </div>
+          <div className="text-5xl">{icon}</div>
+        </div>
+
+        <div className="mt-4 flex items-end gap-3">
+          <div className="text-6xl font-black text-white leading-none">{data.temp}°</div>
+          <div className="flex flex-col text-sm text-zinc-400 mb-1 gap-0.5">
+            <span>⬆️ {data.high}° ⬇️ {data.low}°</span>
+            <span>Yfares bhal {data.feelsLike}°</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 border-t border-white/10 divide-x divide-white/10">
+        {[
+          { icon: '💧', label: 'R6ouba', value: `${data.humidity}%` },
+          { icon: '💨', label: 'Rih',    value: `${data.windSpeed} km/h` },
+          { icon: '🌡️', label: "Yfa9a'",  value: `${data.feelsLike}°C` },
+        ].map(stat => (
+          <div key={stat.label} className="flex flex-col items-center py-3 gap-1">
+            <span className="text-lg">{stat.icon}</span>
+            <span className="text-xs font-bold text-white">{stat.value}</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{stat.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* 3-Day Forecast */}
+      {data.forecast?.length > 0 && (
+        <div className="grid grid-cols-3 border-t border-white/10 divide-x divide-white/10">
+          {data.forecast.slice(0, 3).map((day, i) => (
+            <div key={i} className="flex flex-col items-center py-3 gap-1">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase">{day.day}</span>
+              <span className="text-xl">{ICONS[day.condition] || '🌤️'}</span>
+              <span className="text-xs text-white font-bold">{day.high}°</span>
+              <span className="text-[10px] text-zinc-500">{day.low}°</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default WeatherCard;
