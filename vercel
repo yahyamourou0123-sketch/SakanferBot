@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "api/chat.ts":       { "runtime": "edge",  "memory": 256 },
+    "api/title.ts":      { "runtime": "edge"                  },
+    "api/live-key.ts":   { "runtime": "edge"                  },
+    "api/image.ts":      { "maxDuration": 60                   },
+    "api/transcribe.ts": { "maxDuration": 30                   }
+  },
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*"                      },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS"     },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type"           }
+      ]
+    }
+  ]
+}
