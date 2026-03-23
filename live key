@@ -1,0 +1,3 @@
+// api/live-key.ts
+export const config = { runtime: 'edge' };
+export { handleLiveKey as default } from './helpers';
