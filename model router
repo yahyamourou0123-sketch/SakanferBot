@@ -1,0 +1,143 @@
+// ============================================================
+// SAKANFER - Smart Model Router
+//
+// القاعدة:
+// • الدردشة العادية → دائماً Gemini 2.0 Flash (Sakanfer الأصلي)
+// • كود            → DeepSeek R1 (مجاني، أحسن نموذج كود)
+// • أخبار حية      → Perplexity Sonar (عنده إنترنت حقيقي)
+// • تحليل/ملفات    → Gemini 2.5 Flash (أقوى للفهم)
+// • رياضيات        → Gemini 2.5 Flash (دقيق)
+// • صور/رؤية       → Gemini 2.5 Flash (يفهم الصور)
+// • إبداع/كتابة    → Gemini 2.0 Flash (نفس Sakanfer)
+// • طقس            → Open-Meteo مجاني بدون نموذج
+// ============================================================
+
+export type RouteType = 'chat' | 'code' | 'analysis' | 'math' | 'vision' | 'creative' | 'news' | 'weather';
+export type Provider  = 'gemini' | 'openrouter';
+
+export interface RouteDecision {
+  model:       string;
+  provider:    Provider;
+  label:       string;
+  type:        RouteType;
+  temperature: number;
+  emoji:       string;
+  color:       string;
+}
+
+// ─── النماذج المتاحة ──────────────────────────────────────────────────────────
+export const MODELS = {
+  // الدردشة الأصلية - 1500 طلب/يوم مجاناً - هذا هو "Sakanfer"
+  CHAT:  'gemini-2.0-flash',
+  // للتحليل والصور والرياضيات - 500 طلب/يوم
+  SMART: 'gemini-2.5-flash-preview-05-20',
+  // أحسن نموذج كود مجاني على OpenRouter
+  CODE:  'deepseek/deepseek-r1-0528:free',
+  // أخبار حية مع إنترنت
+  NEWS:  'perplexity/sonar',
+  // Live Voice
+  LIVE:  'gemini-2.5-flash-native-audio-preview-12-2025',
+};
+
+// ─── patterns للكشف ──────────────────────────────────────────────────────────
+const CODE_PAT = [
+  /\b(code|function|debug|bug|error|class|import|export|javascript|python|typescript|react|html|css|sql|algorithm|program|script|component|api|regex|json|array|loop|variable|syntax|compile|build|npm|git|bash|dockerfile|refactor|implement|كود|برمجة|خطأ)\b/i,
+  /```[\s\S]*/,
+  /def |const |let |var |return |print\(|console\./,
+  /\.(js|ts|py|java|cpp|go|rs|php)$/,
+];
+const NEWS_PAT = [
+  /\b(khabar|akhbar|nouvelles|news|aktu|breaking|lyoum|lioum|aujourd|this week|sar chi|chay jadid|trending)\b/i,
+  /\b(tunisie|tunisia|monde|world|politique|sport|foot|match)\b.*\b(lyoum|today|now|maintenant|tawa)\b/i,
+];
+const ANALYSIS_PAT = [
+  /\b(analyse|analyze|summarize|compare|explain in detail|document|pdf|research|report|review|evaluate|breakdown)\b/i,
+  /\b(economics|legal|medical|finance|strategy|business|investment)\b/i,
+];
+const MATH_PAT = [
+  /\b(calculate|solve|equation|formula|derivative|integral|matrix|probability|statistics|calculus|algebra|7seb|9sm|jm3)\b/i,
+  /[∫∑∏√≈≠≤≥±∞]/,
+  /\d+\s*[\+\-\*\/\^]\s*\d+/,
+];
+const CREATIVE_PAT = [
+  /\b(write|story|poem|song|creative|fiction|narrative|script|dialogue|roman|9essa|shi3r)\b/i,
+];
+const WEATHER_PAT = [
+  /\b(t9es|ta9s|meteo|météo|weather|température|berd|s5ana|chta|7al|climate)\b/i,
+  /\b(pluie|soleil|nuage|vent|rain|sun|cloud|wind|snow|neige|7ar|bared)\b/i,
+];
+
+// ─── الدالة الرئيسية ──────────────────────────────────────────────────────────
+export function detectRoute(
+  message:       string,
+  hasAttachment: boolean = false,
+  hasOpenRouter: boolean = false
+): RouteDecision {
+  if (hasAttachment)                             return ROUTES.vision;
+  if (WEATHER_PAT.some(p => p.test(message)))   return ROUTES.weather;
+  if (NEWS_PAT.some(p => p.test(message)))      return hasOpenRouter ? ROUTES.news      : ROUTES.chat;
+  if (CODE_PAT.some(p => p.test(message)))      return hasOpenRouter ? ROUTES.code      : ROUTES.code_gemini;
+  if (MATH_PAT.some(p => p.test(message)))      return ROUTES.math;
+  if (ANALYSIS_PAT.some(p => p.test(message)))  return ROUTES.analysis;
+  if (CREATIVE_PAT.some(p => p.test(message)))  return ROUTES.creative;
+  // ✅ كل شيء ثاني = Gemini Flash الأصلي (Sakanfer)
+  return ROUTES.chat;
+}
+
+// ─── تعريف كل Route ───────────────────────────────────────────────────────────
+export const ROUTES: Record<string, RouteDecision> = {
+  // ✅ الدردشة - Sakanfer الأصلي - لا يتغير أبداً
+  chat: {
+    model: MODELS.CHAT, provider: 'gemini',
+    label: 'Sakanfer', type: 'chat',
+    temperature: 1.0, emoji: '⚡', color: 'text-emerald-400',
+  },
+  // 🧠 كود - DeepSeek R1 مجاني على OpenRouter
+  code: {
+    model: MODELS.CODE, provider: 'openrouter',
+    label: 'DeepSeek R1', type: 'code',
+    temperature: 0.1, emoji: '🧠', color: 'text-violet-400',
+  },
+  // 🧠 كود - Gemini fallback لو ماعندناش OpenRouter
+  code_gemini: {
+    model: MODELS.SMART, provider: 'gemini',
+    label: 'Flash 2.5', type: 'code',
+    temperature: 0.2, emoji: '🧠', color: 'text-violet-400',
+  },
+  // 📰 أخبار - Perplexity Sonar
+  news: {
+    model: MODELS.NEWS, provider: 'openrouter',
+    label: 'Sonar Live', type: 'news',
+    temperature: 0.2, emoji: '📰', color: 'text-cyan-400',
+  },
+  // 🔬 تحليل - Gemini 2.5 Flash
+  analysis: {
+    model: MODELS.SMART, provider: 'gemini',
+    label: 'Flash 2.5', type: 'analysis',
+    temperature: 0.4, emoji: '🔬', color: 'text-blue-400',
+  },
+  // 📐 رياضيات - Gemini 2.5 Flash دقيق
+  math: {
+    model: MODELS.SMART, provider: 'gemini',
+    label: 'Flash 2.5', type: 'math',
+    temperature: 0.1, emoji: '📐', color: 'text-yellow-400',
+  },
+  // 👁️ رؤية/صور - Gemini 2.5 Flash
+  vision: {
+    model: MODELS.SMART, provider: 'gemini',
+    label: 'Flash 2.5', type: 'vision',
+    temperature: 0.7, emoji: '👁️', color: 'text-pink-400',
+  },
+  // ✨ إبداع - نفس Sakanfer بـ temperature عالية
+  creative: {
+    model: MODELS.CHAT, provider: 'gemini',
+    label: 'Sakanfer', type: 'creative',
+    temperature: 1.3, emoji: '✨', color: 'text-orange-400',
+  },
+  // 🌤️ طقس - Open-Meteo (مجاني، بدون AI)
+  weather: {
+    model: MODELS.CHAT, provider: 'gemini',
+    label: 'Open-Meteo', type: 'weather',
+    temperature: 0.3, emoji: '🌤️', color: 'text-sky-400',
+  },
+};
