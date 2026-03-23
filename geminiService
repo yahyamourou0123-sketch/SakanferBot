@@ -1,0 +1,132 @@
+// ============================================================
+// SAKANFER - geminiService.ts (Client)
+// All API calls go through secure /api/* — no keys in browser
+// ============================================================
+
+import { SSEEvent, ChatPayload, WeatherData } from './types';
+import { RouteType } from './modelRouter';
+
+// ─── Streaming Chat ────────────────────────────────────────────────────────────
+export async function streamChat(
+  payload:          ChatPayload,
+  onChunk:          (text: string, model: string, routeType: RouteType) => void,
+  onFunctionCall:   (name: string, args: Record<string, any>, model: string) => void,
+  onWeather:        (data: WeatherData) => void,
+  onDone:           (sources?: { title: string; uri: string }[]) => void,
+  onError:          (message: string, isQuota?: boolean) => void
+): Promise<void> {
+  try {
+    const res = await fetch('/api/chat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      onError(d.message || `HTTP ${res.status}`, res.status === 429);
+      return;
+    }
+
+    const contentType = res.headers.get('Content-Type') || '';
+
+    // JSON response (function calls)
+    if (contentType.includes('application/json')) {
+      const data: SSEEvent = await res.json();
+      if      (data.type === 'function_call') onFunctionCall(data.name, data.args, data.model);
+      else if (data.type === 'error')         onError(data.message, data.isQuota);
+      else if ((data as any).type === 'complete') {
+        onChunk((data as any).text, (data as any).model, (data as any).routeType);
+        onDone();
+      }
+      return;
+    }
+
+    // SSE Streaming
+    const reader  = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer    = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6).trim();
+        if (!json) continue;
+        try {
+          const event: SSEEvent = JSON.parse(json);
+          if      (event.type === 'chunk')         onChunk(event.text, event.model, event.routeType);
+          else if (event.type === 'weather')        onWeather(event.data);
+          else if (event.type === 'done')           { onDone(event.sources); return; }
+          else if (event.type === 'function_call')  { onFunctionCall(event.name, event.args, event.model); return; }
+          else if (event.type === 'error')          { onError(event.message, event.isQuota); return; }
+        } catch {}
+      }
+    }
+    onDone();
+  } catch (e: any) {
+    onError(e.message || 'Connection error');
+  }
+}
+
+// ─── Image Generation ─────────────────────────────────────────────────────────
+export async function generateImageViaApi(
+  prompt:      string,
+  attachment?: { data: string; mimeType: string }
+): Promise<{ imageUrls: string[] | null; model?: string; error?: string }> {
+  try {
+    const res  = await fetch('/api/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, attachment }) });
+    const data = await res.json();
+    if (!res.ok || data.error) return { imageUrls: null, error: data.error };
+    return { imageUrls: data.imageUrls, model: data.model };
+  } catch (e: any) {
+    return { imageUrls: null, error: e.message };
+  }
+}
+
+// ─── Transcription ────────────────────────────────────────────────────────────
+export async function transcribeViaApi(audio: string, mimeType: string): Promise<string | null> {
+  try {
+    const res  = await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio, mimeType }) });
+    const data = await res.json();
+    return data.text || null;
+  } catch { return null; }
+}
+
+// ─── Live API Key ─────────────────────────────────────────────────────────────
+export async function getLiveApiKey(): Promise<string | null> {
+  try {
+    const res  = await fetch('/api/live-key');
+    const data = await res.json();
+    return data.key || null;
+  } catch { return null; }
+}
+
+// ─── Auto Title ───────────────────────────────────────────────────────────────
+export async function generateTitle(message: string): Promise<string> {
+  try {
+    const res  = await fetch('/api/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) });
+    const data = await res.json();
+    return data.title || 'New Conversation';
+  } catch { return 'New Conversation'; }
+}
+
+// ─── Live System Prompt ───────────────────────────────────────────────────────
+export const getChatoPrompt = (ctx = '', personality = 'default'): string => {
+  const now  = new Date();
+  const date = now.toLocaleDateString('fr-TN', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+  const time = now.toLocaleTimeString('fr-TN', { hour: '2-digit', minute: '2-digit' });
+  const p: Record<string, string> = {
+    history: 'EXTRA: History Expert with Tunisian Derja.',
+    friend:  'EXTRA: Encouraging Best Friend. ya khouya, ya 3chiri.',
+    comedy:  'EXTRA: Comedy Character. Sarcastic & funny.',
+    default: '',
+  };
+  return `ROLE: Sakanfer, Tunisian guy. ${p[personality] || ''}
+TIME: ${date}, ${time}. LANGUAGE: Franco-Arabe Derja only. ${ctx}`;
+};
