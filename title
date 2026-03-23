@@ -1,0 +1,48 @@
+// ============================================================
+// SAKANFER - /api/title  (Vercel Edge Function)
+// Generates a short chat title from first user message
+// ============================================================
+
+export const config = { runtime: 'edge' };
+
+const CORS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function getKey(): string {
+  const keys = (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '')
+    .split(/[,;|\n]+/).map(k => k.trim()).filter(Boolean);
+  return keys[Math.floor(Math.random() * keys.length)] || '';
+}
+
+export default async function handler(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
+  if (req.method !== 'POST')    return new Response('Method not allowed', { status: 405 });
+
+  const { message } = await req.json();
+  const key = getKey();
+  if (!key) return new Response(JSON.stringify({ title: 'New Conversation' }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: `Give a very short title (max 4 words, in Derja Tunisian or French) for a conversation that starts with: "${message.slice(0, 200)}". Reply with ONLY the title, no quotes, no punctuation.` }] }],
+          generationConfig: { temperature: 0.5, maxOutputTokens: 20 },
+        }),
+      }
+    );
+
+    if (!res.ok) throw new Error('API error');
+    const data  = await res.json();
+    const title = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'New Conversation';
+    return new Response(JSON.stringify({ title: title.slice(0, 40) }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+  } catch {
+    return new Response(JSON.stringify({ title: 'New Conversation' }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+  }
+}
