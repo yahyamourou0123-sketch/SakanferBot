@@ -1,0 +1,105 @@
+# 🚀 SAKANFER - دليل النشر الكامل
+
+## الملفات الجديدة والمعدّلة
+
+```
+sakanfer/
+├── api/                        ← جديد (Vercel Functions)
+│   ├── chat.ts                 ← المحادثة + streaming + routing
+│   ├── image.ts                ← توليد الصور
+│   ├── transcribe.ts           ← تحويل الصوت للنص
+│   └── live-key.ts             ← مفتاح المكالمة الحية (آمن)
+│
+├── utils/
+│   ├── modelRouter.ts          ← جديد: Smart Model Router
+│   ├── geminiService.ts        ← معدّل: يتصل بـ /api/* بدل Gemini مباشرة
+│   └── types.ts                ← معدّل: أنواع جديدة
+│
+├── components/
+│   └── MessageBubble.tsx       ← معدّل: Markdown + model badge
+│
+├── App.tsx                     ← معدّل: streaming + أمان
+├── vite.config.ts              ← معدّل: بدون API key في bundle
+├── vercel.json                 ← جديد: إعدادات النشر
+└── .env.example                ← جديد: قالب المتغيرات
+```
+
+---
+
+## خطوات النشر (15 دقيقة)
+
+### 1. رفع الكود على GitHub
+```bash
+git init
+git add .
+git commit -m "🚀 Sakanfer v2 - Production Ready"
+git remote add origin https://github.com/username/sakanfer.git
+git push -u origin main
+```
+
+### 2. إنشاء حساب Vercel
+- اذهب إلى https://vercel.com
+- سجّل دخول بحساب GitHub
+- اضغط "New Project" → اختر repo
+
+### 3. إضافة API Keys في Vercel
+في إعدادات المشروع → **Environment Variables**:
+
+```
+GEMINI_API_KEYS = key1,key2,key3
+```
+
+> أضف كل مفاتيحك مفصولة بفواصل. كل مفتاح = 1500 طلب مجاني/يوم
+
+### 4. نشر!
+اضغط **Deploy** → في دقيقتين تطبيقك على الإنترنت 🎉
+
+---
+
+## كيفية الحصول على مفاتيح مجانية
+
+1. اذهب إلى https://aistudio.google.com/apikey
+2. سجّل دخول بحساب Google
+3. اضغط "Create API Key"
+4. كرر مع 3-4 حسابات مختلفة = **6000 طلب مجاني/يوم**
+
+---
+
+## الحدود المجانية لكل نموذج
+
+| النموذج | الاستخدام | الحد المجاني |
+|---------|-----------|-------------|
+| `gemini-2.0-flash` | محادثة عادية | 1500/يوم |
+| `gemini-2.5-flash` | تحليل، صور | 500/يوم |
+| `gemini-2.5-pro` | كود فقط | 25/يوم ⚠️ |
+| `imagen-3` | توليد صور | 50/يوم |
+
+> ⚠️ gemini-2.5-pro محدود جداً (25/يوم). يُستخدم فقط للكود الحقيقي.
+
+---
+
+## للتطوير المحلي
+
+```bash
+# تثبيت Vercel CLI
+npm install -g vercel
+
+# تشغيل مع backend محلي
+vercel dev
+
+# أو للتطوير السريع بدون backend
+npm run dev
+# (في هذه الحالة المحادثة ستفشل - بحاجة لـ vercel dev)
+```
+
+---
+
+## الميزات الجديدة
+
+✅ **Smart Model Routing** - كل طلب للنموذج الأنسب  
+✅ **Streaming** - الردود تظهر كلمة بكلمة كـ ChatGPT  
+✅ **Markdown** - كود، قوائم، عناوين، bold، italic  
+✅ **Model Badge** - يعرض أي نموذج أجاب  
+✅ **API Keys آمنة** - لا توجد مفاتيح في كود المتصفح  
+✅ **Live Call آمن** - المفتاح يُجلب عند الطلب فقط  
+✅ **Context Window** - يرسل آخر 15 رسالة فقط (توفير quota)
