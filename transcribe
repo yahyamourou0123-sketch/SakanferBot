@@ -1,0 +1,3 @@
+// api/transcribe.ts
+export const config = { maxDuration: 30 };
+export { handleTranscribe as default } from './helpers';
