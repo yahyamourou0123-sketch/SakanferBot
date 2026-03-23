@@ -1,0 +1,97 @@
+import { RouteType } from './modelRouter';
+
+export interface Attachment {
+  mimeType: string;
+  data:     string;
+  name:     string;
+}
+
+export interface WeatherData {
+  city:        string;
+  temp:        number;
+  feelsLike:   number;
+  condition:   string;  // 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'foggy' | 'thunderstorm'
+  humidity:    number;
+  windSpeed:   number;
+  high:        number;
+  low:         number;
+  forecast:    { day: string; high: number; low: number; condition: string }[];
+}
+
+export interface Message {
+  id:              string;
+  role:            'user' | 'model';
+  text:            string;
+  timestamp:       Date;
+  imageUrls?:      string[];
+  videoUrl?:       string;
+  attachment?:     Attachment;
+  hasError?:       boolean;
+  groundingSources?: { title: string; uri: string }[];
+  modelLabel?:     string;
+  routeType?:      RouteType;
+  isStreaming?:    boolean;
+  weatherData?:    WeatherData;  // NEW: weather card data
+  citations?:      { title: string; url: string }[]; // NEW: Perplexity citations
+}
+
+export type Personality = 'default' | 'history' | 'friend' | 'comedy';
+
+export interface Chat {
+  id:          string;
+  title:       string;
+  messages:    Message[];
+  createdAt:   Date;
+  personality?: Personality;
+}
+
+// NEW: Enhanced Reminder with alarm features
+export interface Reminder {
+  id:          string;
+  text:        string;
+  dueTime:     Date;
+  isNotified:  boolean;
+  repeat?:     'none' | 'daily' | 'weekly';
+  ttsText?:    string; // custom text for speech
+}
+
+export enum ConnectionStatus {
+  IDLE       = 'IDLE',
+  RECORDING  = 'RECORDING',
+  PROCESSING = 'PROCESSING',
+  SPEAKING   = 'SPEAKING',
+  LIVE_CALL  = 'LIVE_CALL',
+  ERROR      = 'ERROR',
+}
+
+export interface ChatPayload {
+  messages:       GeminiContent[];
+  personality:    Personality;
+  location?:      { lat: number; lng: number } | null;
+  hasAttachment?: boolean;
+  hasOpenRouter?: boolean;
+}
+
+export interface GeminiContent {
+  role:  'user' | 'model';
+  parts: GeminiPart[];
+}
+
+export interface GeminiPart {
+  text?:       string;
+  inlineData?: { mimeType: string; data: string };
+}
+
+export type SSEEvent =
+  | { type: 'chunk';         text: string; model: string; routeType: RouteType }
+  | { type: 'done';          sources?: { title: string; uri: string }[]; citations?: {title:string;url:string}[] }
+  | { type: 'function_call'; name: string; args: Record<string, any>; model: string }
+  | { type: 'weather';       data: WeatherData }
+  | { type: 'error';         message: string; isQuota?: boolean };
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}
